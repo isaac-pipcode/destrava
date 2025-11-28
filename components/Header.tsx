@@ -1,18 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface HeaderProps {
   currentView: string;
   onNavigate: (view: 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports') => void;
+  onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
+const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const getLinkClass = (isActive: boolean) => {
     return isActive
       ? "text-white bg-govblue px-4 py-2 rounded-md font-bold text-sm shadow-md"
       : "text-gray-600 hover:text-govblue hover:bg-blue-50 px-4 py-2 rounded-md font-medium text-sm transition-all";
   };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="bg-white border-b-4 border-govgreen sticky top-0 z-50 shadow-sm">
@@ -105,8 +121,31 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Apoio à Gestão</p>
                 <p className="text-xs font-bold text-govblue">Trabalhadores da Cultura</p>
              </div>
-             <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold border border-gray-200">
-                G
+             
+             {/* User Profile / Logout Menu */}
+             <div className="relative" ref={userMenuRef}>
+                <button 
+                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                   className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold border border-gray-200 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-govblue"
+                >
+                   G
+                </button>
+                
+                {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 animate-fade-in-up z-50">
+                        <div className="px-4 py-3 border-b border-gray-50">
+                            <p className="text-xs text-gray-400 font-bold uppercase">Usuário</p>
+                            <p className="text-sm font-medium text-gray-800">gov.br/artista</p>
+                        </div>
+                        <button 
+                            onClick={onLogout}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Sair do Sistema
+                        </button>
+                    </div>
+                )}
              </div>
           </div>
         </div>

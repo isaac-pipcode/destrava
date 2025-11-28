@@ -16,9 +16,17 @@ const App: React.FC = () => {
   
   // Centralized state for transactions
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  // Custom categories state
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentView('dashboard');
   };
 
   const renderView = () => {
@@ -37,6 +45,8 @@ const App: React.FC = () => {
             transactions={transactions} 
             setTransactions={setTransactions} 
             viewContext="PF"
+            customCategories={customCategories}
+            onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
           />
         );
       case 'manual_pj':
@@ -45,6 +55,8 @@ const App: React.FC = () => {
             transactions={transactions} 
             setTransactions={setTransactions} 
             viewContext="PJ"
+            customCategories={customCategories}
+            onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
           />
         );
       case 'reports':
@@ -70,7 +82,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900 font-sans">
-      <Header currentView={currentView} onNavigate={setCurrentView} />
+      <Header 
+        currentView={currentView} 
+        onNavigate={setCurrentView} 
+        onLogout={handleLogout}
+      />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderView()}
       </main>

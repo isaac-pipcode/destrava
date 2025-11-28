@@ -11,62 +11,112 @@ interface ReportsProps {
 
 const COLORS = ['#4c1d95', '#f43f5e', '#059669', '#3b82f6', '#eab308', '#8b5cf6', '#ec4899', '#6366f1'];
 
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
 const Reports: React.FC<ReportsProps> = ({ transactions }) => {
   const [selectedEntity, setSelectedEntity] = useState<'all' | 'PF' | 'PJ'>('all');
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<'all' | 'inflow' | 'outflow'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  
+  // Date Filters
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
   // Extract unique values for filters
-  const availableMonths = useMemo(() => Array.from(new Set(transactions.map(t => t.month))), [transactions]);
   const availableCategories = useMemo(() => Array.from(new Set(transactions.map(t => t.category))), [transactions]);
   const availableProjects = useMemo(() => Array.from(new Set(transactions.map(t => t.project || '').filter(Boolean))), [transactions]);
+  
+  const availableYears = useMemo(() => {
+    const years = new Set(transactions.map(t => new Date(t.date).getFullYear()));
+    return Array.from(years).sort((a: number, b: number) => b - a);
+  }, [transactions]);
 
   // Filter Data
   const filteredData = useMemo(() => {
     return transactions.filter(t => {
+      const tDate = new Date(t.date);
+      const tYear = tDate.getFullYear().toString();
+      const tMonthIndex = tDate.getMonth(); // 0-11
+
+      // Entity & Type & Category & Project Filters
       const matchEntity = selectedEntity === 'all' || t.entity === selectedEntity;
-      const matchMonth = selectedMonth === 'all' || t.month === selectedMonth;
+      const matchType = selectedType === 'all' || t.type === selectedType;
       const matchCategory = selectedCategory === 'all' || t.category === selectedCategory;
       const matchProject = selectedProject === 'all' || t.project === selectedProject;
-      return matchEntity && matchMonth && matchCategory && matchProject;
+
+      // Date Filters
+      const matchYear = selectedYear === 'all' || tYear === selectedYear;
+      
+      let matchPeriod = true;
+      if (selectedPeriod !== 'all') {
+          if (selectedPeriod === 'S1') matchPeriod = tMonthIndex <= 5; // Jan-Jun
+          else if (selectedPeriod === 'S2') matchPeriod = tMonthIndex >= 6; // Jul-Dec
+          else if (selectedPeriod === 'Q1') matchPeriod = tMonthIndex <= 2; // Jan-Mar
+          else if (selectedPeriod === 'Q2') matchPeriod = tMonthIndex >= 3 && tMonthIndex <= 5; // Apr-Jun
+          else if (selectedPeriod === 'Q3') matchPeriod = tMonthIndex >= 6 && tMonthIndex <= 8; // Jul-Sep
+          else if (selectedPeriod === 'Q4') matchPeriod = tMonthIndex >= 9; // Oct-Dec
+          else matchPeriod = tMonthIndex === parseInt(selectedPeriod); // Specific Month
+      }
+
+      return matchEntity && matchType && matchCategory && matchProject && matchYear && matchPeriod;
     });
-  }, [transactions, selectedEntity, selectedMonth, selectedCategory, selectedProject]);
+  }, [transactions, selectedEntity, selectedType, selectedCategory, selectedProject, selectedYear, selectedPeriod]);
 
   // --- Chart 1: Evolution over time (Line Chart) ---
   const evolutionData = useMemo(() => {
-    // Group by month, but we need meaningful order. 
-    // We'll use the ISO date to sort, then aggregate.
+    // Group by month label (e.g., "Out/2023" or just "Out" if 1 year selected)
     const grouped: Record<string, { date: number, name: string, Receita: number, Despesa: number }> = {};
     
     filteredData.forEach(t => {
-      const monthKey = t.month;
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = { 
-            date: new Date(t.date).getTime(), // Keep a timestamp for sorting
-            name: monthKey, 
+      const d = new Date(t.date);
+      // Create a unique key for sorting, and a display name
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      // If multiple years selected, show year in label. If single year, show just month.
+      const label = selectedYear === 'all' 
+        ? `${MONTH_NAMES[d.getMonth()].substring(0,3)}/${d.getFullYear().toString().substring(2)}`
+        : MONTH_NAMES[d.getMonth()].substring(0,3);
+
+      if (!grouped[key]) {
+        grouped[key] = { 
+            date: d.getTime(), // Sortable timestamp
+            name: label, 
             Receita: 0, 
             Despesa: 0 
         };
       }
-      if (t.type === 'inflow') grouped[monthKey].Receita += t.amount;
-      else grouped[monthKey].Despesa += t.amount;
+      if (t.type === 'inflow') grouped[key].Receita += t.amount;
+      else grouped[key].Despesa += t.amount;
     });
 
     return Object.values(grouped).sort((a, b) => a.date - b.date);
-  }, [filteredData]);
+  }, [filteredData, selectedYear]);
 
-  // --- Chart 2: Expenses by Category (Bar Chart) ---
+  // --- Chart 2: Category Breakdown (Pie Chart) ---
+  // Logic: If user filters specifically for 'inflow', show Income Sources.
+  // Otherwise (All or Outflow), show Expenses breakdown.
+  const pieChartType = selectedType === 'inflow' ? 'inflow' : 'outflow';
+  const pieChartTitle = selectedType === 'inflow' ? 'Receitas por Categoria' : 'Gastos por Categoria';
+
   const categoryData = useMemo(() => {
     const grouped: Record<string, number> = {};
-    filteredData.filter(t => t.type === 'outflow').forEach(t => {
+    
+    // Filter specifically for the chart type logic, independent of 'selectedType' being 'all'
+    const dataToChart = selectedType === 'all' 
+        ? filteredData.filter(t => t.type === 'outflow') // Default to outflow if ALL is selected
+        : filteredData; // Otherwise use the filtered data (which is already specific type)
+
+    dataToChart.forEach(t => {
       grouped[t.category] = (grouped[t.category] || 0) + t.amount;
     });
 
     return Object.entries(grouped)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value); // Sort descending
-  }, [filteredData]);
+  }, [filteredData, selectedType]);
 
   // --- KPI Totals ---
   const totalInflow = filteredData.reduce((acc, t) => t.type === 'inflow' ? acc + t.amount : acc, 0);
@@ -113,12 +163,53 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         </select>
         
         <select 
-          value={selectedMonth} 
-          onChange={(e) => setSelectedMonth(e.target.value)}
+          value={selectedType} 
+          onChange={(e) => setSelectedType(e.target.value as 'all' | 'inflow' | 'outflow')}
+          className={`px-4 py-2 rounded-lg border text-sm font-medium focus:ring-primary focus:border-primary ${
+              selectedType === 'inflow' ? 'bg-green-50 border-green-200 text-green-700' : 
+              selectedType === 'outflow' ? 'bg-red-50 border-red-200 text-red-700' :
+              'bg-gray-50 border-gray-200'
+          }`}
+        >
+          <option value="all">Entradas e Saídas</option>
+          <option value="inflow">Apenas Entradas</option>
+          <option value="outflow">Apenas Saídas</option>
+        </select>
+
+        {/* YEAR Filter */}
+        <select 
+          value={selectedYear} 
+          onChange={(e) => setSelectedYear(e.target.value)}
           className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary"
         >
-          <option value="all">Todos os Meses</option>
-          {availableMonths.map(m => <option key={m} value={m}>{m}</option>)}
+          <option value="all">Todos os Anos</option>
+          {availableYears.map(year => (
+              <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+
+        {/* PERIOD Filter */}
+        <select 
+          value={selectedPeriod} 
+          onChange={(e) => setSelectedPeriod(e.target.value)}
+          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary min-w-[140px]"
+        >
+          <option value="all">Todo o Período</option>
+          <optgroup label="Semestres">
+            <option value="S1">1º Semestre (Jan-Jun)</option>
+            <option value="S2">2º Semestre (Jul-Dez)</option>
+          </optgroup>
+          <optgroup label="Trimestres">
+            <option value="Q1">1º Trimestre (Jan-Mar)</option>
+            <option value="Q2">2º Trimestre (Abr-Jun)</option>
+            <option value="Q3">3º Trimestre (Jul-Set)</option>
+            <option value="Q4">4º Trimestre (Out-Dez)</option>
+          </optgroup>
+          <optgroup label="Mensal">
+            {MONTH_NAMES.map((m, idx) => (
+                <option key={m} value={idx.toString()}>{m}</option>
+            ))}
+          </optgroup>
         </select>
 
         <select 
@@ -142,11 +233,11 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+        <div className={`bg-emerald-50 p-6 rounded-2xl border border-emerald-100 transition-opacity ${selectedType === 'outflow' ? 'opacity-50' : 'opacity-100'}`}>
            <p className="text-xs font-bold text-emerald-700 uppercase">Receita Total (Filtro)</p>
            <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalInflow)}</p>
         </div>
-        <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
+        <div className={`bg-red-50 p-6 rounded-2xl border border-red-100 transition-opacity ${selectedType === 'inflow' ? 'opacity-50' : 'opacity-100'}`}>
            <p className="text-xs font-bold text-red-700 uppercase">Despesa Total (Filtro)</p>
            <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalOutflow)}</p>
         </div>
@@ -249,9 +340,9 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
            </div>
         </div>
 
-        {/* Expenses by Category */}
+        {/* Breakdown by Category */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-purple-50">
-           <h3 className="text-lg font-bold text-gray-800 mb-6">Gastos por Categoria</h3>
+           <h3 className="text-lg font-bold text-gray-800 mb-6">{pieChartTitle}</h3>
            <div className="h-80 w-full flex">
              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -277,9 +368,9 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       </div>
       
       {/* Detail Table for Filtered Data (General View) */}
-      {selectedCategory !== 'all' && selectedProject === 'all' && (
+      {selectedProject === 'all' && (
           <div className="mt-8 bg-white rounded-3xl shadow-sm border border-purple-50 p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Detalhamento: {selectedCategory}</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Detalhamento de Lançamentos</h3>
               <div className="overflow-x-auto">
                   <table className="min-w-full text-sm text-left">
                       <thead className="text-xs text-gray-400 uppercase bg-gray-50 border-b border-gray-100">
@@ -287,12 +378,13 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                               <th className="px-6 py-3">Data</th>
                               <th className="px-6 py-3">Descrição</th>
                               <th className="px-6 py-3">Entidade</th>
+                              <th className="px-6 py-3">Categoria</th>
                               <th className="px-6 py-3">Projeto</th>
                               <th className="px-6 py-3 text-right">Valor</th>
                           </tr>
                       </thead>
                       <tbody>
-                          {filteredData.filter(t => t.category === selectedCategory).map(t => (
+                          {filteredData.map(t => (
                               <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50">
                                   <td className="px-6 py-3 text-gray-500">{new Date(t.date).toLocaleDateString()}</td>
                                   <td className="px-6 py-3 font-medium text-gray-900">{t.description}</td>
@@ -301,9 +393,10 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                                           {t.entity}
                                       </span>
                                   </td>
+                                  <td className="px-6 py-3 text-gray-600 text-xs">{t.category}</td>
                                   <td className="px-6 py-3 text-primary">{t.project || '-'}</td>
-                                  <td className="px-6 py-3 text-right font-bold text-red-500">
-                                      - {formatCurrency(t.amount)}
+                                  <td className={`px-6 py-3 text-right font-bold ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                      {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                                   </td>
                               </tr>
                           ))}

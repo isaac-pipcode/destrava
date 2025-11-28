@@ -7,48 +7,215 @@ const MONTHS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-const CATEGORIES = [
-  'Cachê Artístico/Serviço',
-  'Edital/Lei de Incentivo',
-  'Venda de Obras/Ingressos',
-  'Produção/Material',
-  'Equipamentos/Software',
-  'Impostos (MEI/Simples)',
-  'Aluguel de Espaço',
-  'Transporte/Viagem',
-  'Alimentação',
-  'Transferência entre Contas',
-  'Outros'
+// PJ (Pessoa Jurídica) Categories
+const PJ_CATEGORIES_IN = [
+    'Cachê Artístico/Serviço',
+    'Edital/Lei de Incentivo',
+    'Venda de Obras/Ingressos',
+    'Aporte de Sócio',
+    'Outros'
 ];
+
+const PJ_CATEGORIES_OUT = [
+    'Produção/Material',
+    'Equipamentos/Software',
+    'Impostos (MEI/Simples)',
+    'Contabilidade/Jurídico',
+    'Aluguel de Espaço/Sede',
+    'Marketing/Divulgação',
+    'Pró-labore/Distribuição Lucro',
+    'Transporte/Logística',
+    'Taxas Bancárias',
+    'Outros'
+];
+
+// PF (Pessoa Física) Categories
+const PF_CATEGORIES_IN = [
+    'Pró-labore/Retirada da PJ',
+    'Cachê (Pessoa Física)',
+    'Salário/Emprego CLT',
+    'Rendimentos/Investimentos',
+    'Presentes/Doações Recebidas',
+    'Reembolsos',
+    'Outros'
+];
+
+const PF_CATEGORIES_OUT = [
+    'Habitação (Aluguel/Condomínio)',
+    'Alimentação/Mercado',
+    'Saúde/Farmácia',
+    'Transporte/Combustível',
+    'Educação/Cursos',
+    'Lazer/Cultura',
+    'Família/Filhos',
+    'Assinaturas/Serviços (Net/Luz)',
+    'Vestuário/Cuidados Pessoais',
+    'Doações/Apoios',
+    'Investimentos/Poupança',
+    'Outros'
+];
+
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+    // PJ IN
+    'Cachê Artístico/Serviço': 'Recebimento por apresentações, shows, oficinas ou serviços prestados (NF).',
+    'Edital/Lei de Incentivo': 'Recursos de editais (Lei Paulo Gustavo, Aldir Blanc, ProAC, Rouanet).',
+    'Venda de Obras/Ingressos': 'Receita direta de bilheteria, venda de livros, obras de arte ou merch.',
+    'Aporte de Sócio': 'Capital próprio investido na empresa para fluxo de caixa.',
+    
+    // PJ OUT
+    'Produção/Material': 'Custos diretos do projeto (cenografia, figurino, locação, matéria-prima).',
+    'Equipamentos/Software': 'Compra de bens duráveis (câmeras, instrumentos) e licenças digitais.',
+    'Impostos (MEI/Simples)': 'Pagamento do DAS, taxas de emissão de nota e tributos.',
+    'Contabilidade/Jurídico': 'Honorários de contador, advogado ou taxas administrativas.',
+    'Aluguel de Espaço/Sede': 'Manutenção do local de trabalho ou estúdio.',
+    'Marketing/Divulgação': 'Anúncios (Ads), gestão de redes sociais e assessoria de imprensa.',
+    'Pró-labore/Distribuição Lucro': 'Remuneração dos sócios (transferência para conta PF).',
+    'Transporte/Logística': 'Fretes, Uber corporativo, passagens e hospedagem de equipe.',
+    'Taxas Bancárias': 'Tarifas de conta PJ, taxas de boleto ou maquininha.',
+
+    // PF IN
+    'Pró-labore/Retirada da PJ': 'Valores recebidos da sua própria empresa (MEI/ME).',
+    'Cachê (Pessoa Física)': 'Trabalhos realizados como autônomo direto no CPF (RPA).',
+    'Salário/Emprego CLT': 'Renda de vínculo empregatício formal.',
+    'Rendimentos/Investimentos': 'Dividendos, lucros de aplicações ou aluguel de equipamentos.',
+    'Presentes/Doações Recebidas': 'Apoio financeiro de familiares ou terceiros.',
+    'Reembolsos': 'Devolução de despesas adiantadas.',
+
+    // PF OUT
+    'Habitação (Aluguel/Condomínio)': 'Aluguel de casa, IPTU, condomínio e contas residenciais.',
+    'Alimentação/Mercado': 'Supermercado, feira e refeições diárias.',
+    'Saúde/Farmácia': 'Planos de saúde, consultas, exames e medicamentos.',
+    'Transporte/Combustível': 'Uber pessoal, gasolina, transporte público ou manutenção de carro.',
+    'Educação/Cursos': 'Mensalidades escolares e material didático.',
+    'Lazer/Cultura': 'Cinema, teatro, streaming, assinaturas e saídas.',
+    'Família/Filhos': 'Despesas específicas com dependentes.',
+    'Assinaturas/Serviços (Net/Luz)': 'Contas de consumo pessoal (Celular, Internet, Luz).',
+    'Vestuário/Cuidados Pessoais': 'Roupas, calçados, cabeleireiro e higiene.',
+    'Doações/Apoios': 'Contribuições para causas sociais ou ajuda a terceiros.',
+    'Investimentos/Poupança': 'Valores guardados para reserva de emergência ou futuro.',
+    
+    'Outros': 'Movimentações gerais não classificadas acima.'
+};
 
 interface ManualManagerProps {
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   viewContext: 'PF' | 'PJ';
+  customCategories: string[];
+  onAddCategory: (category: string) => void;
 }
 
-const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransactions, viewContext }) => {
-  const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[new Date().getMonth()]);
+const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransactions, viewContext, customCategories, onAddCategory }) => {
+  const todayDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[todayDate.getMonth()]);
+  const [selectedYear, setSelectedYear] = useState<number>(todayDate.getFullYear());
+  
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
   
+  // Datepicker / Month Picker State
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+  
+  // Lazy Loading State
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
   // Form State
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'inflow' | 'outflow'>('inflow');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
   const [project, setProject] = useState('');
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   
+  // Recurring State
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceMonths, setRecurrenceMonths] = useState(1);
+
+  // New Category State
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Theme Colors based on Context
+  // Theme Colors
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
   const themeBgLight = viewContext === 'PF' ? 'bg-green-50' : 'bg-blue-50';
   const themeText = viewContext === 'PF' ? 'text-govgreen' : 'text-govblue';
   const themeBorder = viewContext === 'PF' ? 'border-govgreen' : 'border-govblue';
+
+  // Determine available categories based on context and type
+  const availableCategories = useMemo(() => {
+      let baseList = [];
+      if (viewContext === 'PF') {
+          baseList = type === 'inflow' ? PF_CATEGORIES_IN : PF_CATEGORIES_OUT;
+      } else {
+          baseList = type === 'inflow' ? PJ_CATEGORIES_IN : PJ_CATEGORIES_OUT;
+      }
+      return [...baseList, ...customCategories];
+  }, [viewContext, type, customCategories]);
+
+  // Set default category when type/context changes
+  useEffect(() => {
+      setCategory(availableCategories[0]);
+  }, [type, viewContext, availableCategories]);
+
+  // Reset visible count when month/year or context changes
+  useEffect(() => {
+    setVisibleCount(20);
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTop = 0;
+    }
+  }, [selectedMonth, selectedYear, viewContext]);
+
+  // Close month picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+        setIsMonthPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleAddCustomCategory = () => {
+      if (newCategoryName.trim()) {
+          onAddCategory(newCategoryName.trim());
+          setCategory(newCategoryName.trim());
+          setIsAddingCategory(false);
+          setNewCategoryName('');
+      }
+  };
+
+  const changeMonth = (offset: number) => {
+    const currentIndex = MONTHS.indexOf(selectedMonth);
+    let newIndex = currentIndex + offset;
+    
+    // Cycle through months and adjust year
+    if (newIndex < 0) {
+        newIndex = 11;
+        setSelectedYear(prev => prev - 1);
+    } else if (newIndex > 11) {
+        newIndex = 0;
+        setSelectedYear(prev => prev + 1);
+    }
+    
+    setSelectedMonth(MONTHS[newIndex]);
+  };
+
+  const goToToday = () => {
+      const now = new Date();
+      setSelectedMonth(MONTHS[now.getMonth()]);
+      setSelectedYear(now.getFullYear());
+      setIsMonthPickerOpen(false);
+  };
 
   const handleEditClick = (t: Transaction) => {
     setDescription(t.description);
@@ -59,49 +226,65 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setSupplierDoc(t.supplierDoc || '');
     setPaymentDoc(t.paymentDoc || '');
     setEditId(t.id);
+    
+    // Switch view to transaction's date
+    const tDate = new Date(t.date);
     setSelectedMonth(t.month);
+    setSelectedYear(tDate.getFullYear());
+    
+    setIsRecurring(false); 
   };
 
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount) return;
 
-    if (editId) {
-      // Update existing
-      setTransactions(prev => prev.map(t => {
-        if (t.id === editId) {
-          return {
-            ...t,
-            description,
-            amount: parseFloat(amount.replace(',', '.')),
+    const numAmount = parseFloat(amount.replace(',', '.'));
+    
+    // Generate Transactions (1 or many if recurring)
+    const newTransactions: Transaction[] = [];
+    const loopCount = editId ? 1 : (isRecurring ? recurrenceMonths : 1);
+    const relatedId = isRecurring ? crypto.randomUUID() : undefined;
+    
+    // Determine start date based on SELECTED YEAR and Month
+    let currentMonthIndex = MONTHS.indexOf(selectedMonth);
+    let currentYear = selectedYear;
+    
+    // Default day to today's day, or 28th if simpler to avoid overflows
+    const day = Math.min(new Date().getDate(), 28);
+
+    for (let i = 0; i < loopCount; i++) {
+        // Calculate Month Cyclic
+        let totalMonthIndex = currentMonthIndex + i;
+        let yearOffset = Math.floor(totalMonthIndex / 12);
+        let monthIndex = totalMonthIndex % 12;
+        let monthName = MONTHS[monthIndex];
+        let year = currentYear + yearOffset;
+        
+        // Create Date object
+        let dateObj = new Date(year, monthIndex, day);
+
+        newTransactions.push({
+            id: editId && i === 0 ? editId : crypto.randomUUID(),
+            description: loopCount > 1 ? `${description} (${i+1}/${loopCount})` : description,
+            amount: numAmount,
             type,
             category,
             project,
             supplierDoc,
             paymentDoc,
+            date: dateObj.toISOString(),
+            month: monthName,
             entity: viewContext,
-            month: selectedMonth
-          };
-        }
-        return t;
-      }));
-      setEditId(null);
+            isRecurring: loopCount > 1,
+            relatedId
+        });
+    }
+
+    if (editId) {
+        setTransactions(prev => prev.map(t => t.id === editId ? newTransactions[0] : t));
     } else {
-      // Add new
-      const newTransaction: Transaction = {
-        id: crypto.randomUUID(),
-        description,
-        amount: parseFloat(amount.replace(',', '.')), 
-        type,
-        category,
-        project,
-        supplierDoc,
-        paymentDoc,
-        date: new Date().toISOString(),
-        month: selectedMonth,
-        entity: viewContext // Lock to current view
-      };
-      setTransactions(prev => [...prev, newTransaction]);
+        setTransactions(prev => [...prev, ...newTransactions]);
     }
     
     // Reset form
@@ -111,6 +294,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setSupplierDoc('');
     setPaymentDoc('');
     setEditId(null);
+    setIsRecurring(false);
+    setRecurrenceMonths(1);
   };
 
   const handleCancelEdit = () => {
@@ -120,6 +305,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setSupplierDoc('');
     setPaymentDoc('');
     setEditId(null);
+    setIsRecurring(false);
   }
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
@@ -147,32 +333,41 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
         }
 
         const monthCounts: Record<string, number> = {};
+        const yearCounts: Record<number, number> = {};
 
         const newTransactions: Transaction[] = parsedItems.map(item => {
            let itemMonth = selectedMonth;
+           let itemYear = selectedYear;
+
            if (item.date) {
              const dateObj = new Date(item.date);
              if (!isNaN(dateObj.getTime())) {
                 itemMonth = MONTHS[dateObj.getMonth()];
+                itemYear = dateObj.getFullYear();
              }
            }
            monthCounts[itemMonth] = (monthCounts[itemMonth] || 0) + 1;
+           yearCounts[itemYear] = (yearCounts[itemYear] || 0) + 1;
 
            return {
              id: crypto.randomUUID(),
              ...item,
              month: itemMonth,
              project: '',
-             entity: viewContext // Force import to current view context
+             entity: viewContext
            };
         });
 
+        // Determine most frequent month/year to switch view
         const mostFrequentMonth = Object.keys(monthCounts).reduce((a, b) => monthCounts[a] > monthCounts[b] ? a : b);
+        const mostFrequentYear = Object.keys(yearCounts).reduce((a, b) => yearCounts[parseInt(a)] > yearCounts[parseInt(b)] ? a : b);
         
         setTransactions(prev => [...prev, ...newTransactions]);
         setSelectedMonth(mostFrequentMonth);
+        setSelectedYear(parseInt(mostFrequentYear));
+
         setImportStatus({ 
-            msg: `${newTransactions.length} itens importados para ${viewContext}! Mês: ${mostFrequentMonth}.`, 
+            msg: `${newTransactions.length} itens importados! Visualizando ${mostFrequentMonth}/${mostFrequentYear}.`, 
             type: 'success' 
         });
         
@@ -188,18 +383,62 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     reader.readAsText(file);
   };
 
-  // Filter Transactions for CURRENT View Context ONLY
+  // --- Financial Logic ---
+
+  // 1. Filter Transactions for CURRENT Entity Only
   const currentEntityTransactions = useMemo(() => {
     return transactions.filter(t => t.entity === viewContext);
   }, [transactions, viewContext]);
 
-  // Filter by Month
+  // 2. Filter by Month AND Year
   const currentMonthTransactions = useMemo(() => {
-    return currentEntityTransactions.filter(t => t.month === selectedMonth);
-  }, [currentEntityTransactions, selectedMonth]);
+    return currentEntityTransactions.filter(t => {
+        const tDate = new Date(t.date);
+        if (isNaN(tDate.getTime())) return false;
+        return t.month === selectedMonth && tDate.getFullYear() === selectedYear;
+    });
+  }, [currentEntityTransactions, selectedMonth, selectedYear]);
 
-  // Totals for this view
-  const totals = useMemo(() => {
+  // 3. Sorting & Lazy Loading
+  const sortedTransactions = useMemo(() => {
+    return currentMonthTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [currentMonthTransactions]);
+
+  const visibleTransactions = useMemo(() => {
+    return sortedTransactions.slice(0, visibleCount);
+  }, [sortedTransactions, visibleCount]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    // Check if scrolled near bottom (50px threshold)
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (!isLoadingList && visibleCount < sortedTransactions.length) {
+        setIsLoadingList(true);
+        // Delay to show spinner/simulation
+        setTimeout(() => {
+          setVisibleCount(prev => prev + 20);
+          setIsLoadingList(false);
+        }, 600);
+      }
+    }
+  };
+
+  // 4. Calculate "Previous Balance" (All time before start of this month)
+  const previousBalance = useMemo(() => {
+      // Create a date for the 1st of the current selected month/year
+      const startOfView = new Date(selectedYear, MONTHS.indexOf(selectedMonth), 1);
+
+      return currentEntityTransactions.reduce((acc, t) => {
+          const tDate = new Date(t.date);
+          if (tDate < startOfView) {
+              return acc + (t.type === 'inflow' ? t.amount : -t.amount);
+          }
+          return acc;
+      }, 0);
+  }, [currentEntityTransactions, selectedMonth, selectedYear]);
+
+  // 5. Current Month Totals
+  const currentMonthTotals = useMemo(() => {
     return currentMonthTransactions.reduce((acc, curr) => {
       if (curr.type === 'inflow') {
         acc.inflow += curr.amount;
@@ -210,35 +449,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     }, { inflow: 0, outflow: 0 });
   }, [currentMonthTransactions]);
 
-  // Relationship Logic: Check flow from the OTHER entity
-  const otherEntity = viewContext === 'PF' ? 'PJ' : 'PF';
-  const crossFlow = useMemo(() => {
-     // Find transactions in the OTHER entity that might be related
-     // E.g. if I am PF, I want to know if PJ sent money out to me.
-     const otherTrans = transactions.filter(t => t.entity === otherEntity && t.month === selectedMonth);
-     
-     // Heuristic: Transfers usually have "Transferência" or "PF"/"PJ" in description or category
-     if (viewContext === 'PF') {
-         // Money coming from PJ (Outflows from PJ that are Inflows to PF logic)
-         // Actually, we look at Inflows in PF that are categorized as Transfers/Income from PJ
-         // OR we look at Outflows in PJ that match "Sócio" or "Retirada"
-         const relatedOutflowsFromPJ = otherTrans
-            .filter(t => t.type === 'outflow' && (t.category.includes('Impostos') === false)) // Exclude taxes
-            .filter(t => t.description.toLowerCase().includes('sócio') || t.description.toLowerCase().includes('pf') || t.description.toLowerCase().includes('retirada') || t.category === 'Transferência entre Contas');
-         
-         const totalReceivedFromPJ = relatedOutflowsFromPJ.reduce((acc, t) => acc + t.amount, 0);
-         return { label: `Retiradas da PJ (${selectedMonth})`, amount: totalReceivedFromPJ, direction: 'incoming' };
-     } else {
-         // Money sent to PJ (Inflows to PJ from PF? Rare. Usually 'Aporte')
-         // Or Money sent to PF (Distribution)
-         const relatedInflowsFromPF = otherTrans
-             .filter(t => t.type === 'outflow' && t.description.toLowerCase().includes('aporte')); // PF outflowing to PJ
-         
-         const totalAporteFromPF = relatedInflowsFromPF.reduce((acc, t) => acc + t.amount, 0);
-         return { label: `Aportes de PF (${selectedMonth})`, amount: totalAporteFromPF, direction: 'incoming' };
-     }
-  }, [transactions, viewContext, selectedMonth]);
-
+  const currentMonthResult = currentMonthTotals.inflow - currentMonthTotals.outflow;
+  const accumulatedBalance = previousBalance + currentMonthResult;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -257,17 +469,81 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
           </p>
         </div>
         
-        <div className="flex items-center bg-gray-50 p-1 pr-4 rounded-full shadow-inner border border-gray-200 mt-4 md:mt-0">
-          <div className="bg-white shadow-sm border border-gray-100 px-4 py-2 rounded-full mr-2">
-              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Mês</span>
+        {/* Visual Month/Year Picker */}
+        <div className="mt-4 md:mt-0 relative" ref={monthPickerRef}>
+          <div className="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-1">
+             <button 
+               onClick={() => changeMonth(-1)}
+               className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-govblue transition-colors"
+               title="Mês Anterior"
+             >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+             </button>
+             
+             <div 
+               className="px-6 py-2 cursor-pointer flex items-center gap-2 group min-w-[180px] justify-center"
+               onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+             >
+                <svg className="w-4 h-4 text-gray-400 group-hover:text-govblue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div className="flex flex-col items-center leading-tight">
+                    <span className={`text-lg font-bold ${themeText} select-none`}>
+                    {selectedMonth}
+                    </span>
+                    <span className="text-gray-400 text-xs font-normal select-none">{selectedYear}</span>
+                </div>
+             </div>
+
+             <button 
+               onClick={() => changeMonth(1)}
+               className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-govblue transition-colors"
+               title="Próximo Mês"
+             >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+             </button>
           </div>
-          <select 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-transparent border-none text-gray-800 font-bold focus:ring-0 cursor-pointer min-w-[120px] text-lg"
-          >
-            {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+
+          {/* Grid Dropdown for Direct Selection */}
+          {isMonthPickerOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50 animate-fade-in-up">
+                  {/* Year Navigation inside Popover */}
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-50">
+                      <button onClick={() => setSelectedYear(prev => prev - 1)} className="p-1 hover:bg-gray-100 rounded text-gray-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                      </button>
+                      <span className="font-bold text-gray-800">{selectedYear}</span>
+                      <button onClick={() => setSelectedYear(prev => prev + 1)} className="p-1 hover:bg-gray-100 rounded text-gray-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                      </button>
+                  </div>
+                  
+                  {/* Months Grid */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                      {MONTHS.map((m) => (
+                          <button
+                              key={m}
+                              onClick={() => { setSelectedMonth(m); setIsMonthPickerOpen(false); }}
+                              className={`py-2 px-1 text-sm rounded-lg font-medium transition-colors ${
+                                  selectedMonth === m 
+                                  ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white shadow-md` 
+                                  : 'text-gray-600 hover:bg-gray-50'
+                              }`}
+                          >
+                              {m.substring(0, 3)}
+                          </button>
+                      ))}
+                  </div>
+                  
+                  {/* Today Button */}
+                  <button 
+                    onClick={goToToday}
+                    className={`w-full py-2 text-xs font-bold uppercase rounded-lg border border-dashed transition-colors
+                        ${viewContext === 'PF' ? 'text-govgreen border-govgreen hover:bg-green-50' : 'text-govblue border-govblue hover:bg-blue-50'}
+                    `}
+                  >
+                    Ir para Hoje
+                  </button>
+              </div>
+          )}
         </div>
       </div>
 
@@ -298,7 +574,15 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
               disabled={isImporting}
               className={`w-full relative z-10 py-3 px-4 bg-white rounded-xl font-bold text-sm shadow-sm flex justify-center items-center gap-2 transition-colors ${themeText}`}
             >
-              {isImporting ? 'Processando...' : 'Selecionar Arquivo'}
+              {isImporting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processando...
+                </>
+              ) : 'Selecionar Arquivo'}
             </button>
           </div>
           
@@ -323,21 +607,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             
             <form onSubmit={handleSaveTransaction} className="space-y-5">
               
-              {/* Entity Indicator (Read Only) */}
-              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <span className="text-xs font-bold text-gray-400 uppercase">Conta Destino</span>
-                  <span className={`text-sm font-bold ${themeText}`}>
-                      {viewContext === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                  </span>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Descrição</label>
                 <input 
                   type="text" 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={viewContext === 'PF' ? "Ex: Aluguel, Mercado" : "Ex: Cachê, Fornecedor"}
+                  placeholder={viewContext === 'PF' ? "Ex: Aluguel, Supermercado" : "Ex: Cachê, Fornecedor"}
                   className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white focus:${themeBorder} focus:ring-${themeColor}`}
                   required
                 />
@@ -374,25 +650,27 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
               {viewContext === 'PJ' && (
                   <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-3">
                       <p className="text-[10px] font-bold text-gray-400 uppercase">Dados para Prestação de Contas</p>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-500 mb-1">CPF/CNPJ Fornecedor</label>
-                        <input 
-                          type="text" 
-                          value={supplierDoc}
-                          onChange={(e) => setSupplierDoc(e.target.value)}
-                          placeholder="00.000.000/0001-99"
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-500 mb-1">Nº Doc (Pix/Cheque)</label>
-                        <input 
-                          type="text" 
-                          value={paymentDoc}
-                          onChange={(e) => setPaymentDoc(e.target.value)}
-                          placeholder="Ex: NF 123"
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-500 mb-1">CPF/CNPJ</label>
+                            <input 
+                            type="text" 
+                            value={supplierDoc}
+                            onChange={(e) => setSupplierDoc(e.target.value)}
+                            placeholder="00.000..."
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-500 mb-1">Nº Doc</label>
+                            <input 
+                            type="text" 
+                            value={paymentDoc}
+                            onChange={(e) => setPaymentDoc(e.target.value)}
+                            placeholder="NF/Pix"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
+                            />
+                        </div>
                       </div>
                   </div>
               )}
@@ -426,16 +704,79 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                     </div>
                  </div>
                  <div className="col-span-2">
-                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Categoria</label>
-                    <select 
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white focus:${themeBorder} focus:ring-${themeColor}`}
-                    >
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide">Categoria</label>
+                        {!isAddingCategory && (
+                            <button 
+                                type="button" 
+                                onClick={() => setIsAddingCategory(true)}
+                                className="text-[10px] text-accent font-bold hover:underline"
+                            >
+                                + Nova
+                            </button>
+                        )}
+                    </div>
+                    
+                    {isAddingCategory ? (
+                        <div className="flex gap-2">
+                            <input 
+                                type="text"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                placeholder="Nome da Categoria"
+                                className={`flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:${themeBorder} focus:ring-${themeColor}`}
+                                autoFocus
+                            />
+                            <button type="button" onClick={handleAddCustomCategory} className="bg-govgreen text-white px-3 py-2 rounded-lg text-xs font-bold">OK</button>
+                            <button type="button" onClick={() => setIsAddingCategory(false)} className="bg-gray-200 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold">X</button>
+                        </div>
+                    ) : (
+                        <select 
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white focus:${themeBorder} focus:ring-${themeColor}`}
+                        >
+                        {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    )}
+
+                    {/* Description Tooltip */}
+                    {!isAddingCategory && category && CATEGORY_DESCRIPTIONS[category] && (
+                        <div className="mt-2 px-1 flex items-start gap-2 animate-fade-in">
+                            <svg className={`w-4 h-4 mt-0.5 flex-shrink-0 ${viewContext === 'PF' ? 'text-govgreen' : 'text-govblue'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p className="text-xs text-gray-500 italic">
+                                {CATEGORY_DESCRIPTIONS[category]}
+                            </p>
+                        </div>
+                    )}
                  </div>
               </div>
+              
+              {/* Recurring Option */}
+              {!editId && (
+                  <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+                      <input 
+                          type="checkbox" 
+                          id="recurring" 
+                          checked={isRecurring} 
+                          onChange={(e) => setIsRecurring(e.target.checked)}
+                          className={`w-5 h-5 rounded text-${themeColor} focus:ring-${themeColor} border-gray-300`}
+                      />
+                      <label htmlFor="recurring" className="text-sm text-gray-700 font-medium select-none cursor-pointer">
+                          Repetir lançamento?
+                      </label>
+                      
+                      {isRecurring && (
+                          <select 
+                              value={recurrenceMonths}
+                              onChange={(e) => setRecurrenceMonths(Number(e.target.value))}
+                              className="ml-auto text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white"
+                          >
+                              {[2,3,4,5,6,12].map(n => <option key={n} value={n}>{n} meses</option>)}
+                          </select>
+                      )}
+                  </div>
+              )}
 
               <button 
                 type="submit"
@@ -443,7 +784,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                     viewContext === 'PF' ? 'bg-govgreen hover:bg-green-700' : 'bg-govblue hover:bg-blue-800'
                 }`}
               >
-                {editId ? 'Atualizar Lançamento' : '+ Adicionar'}
+                {editId ? 'Atualizar Lançamento' : (isRecurring ? `Lançar Recorrente (${recurrenceMonths}x)` : '+ Adicionar')}
               </button>
             </form>
           </div>
@@ -452,79 +793,86 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
         {/* Right Column: Dashboard & List (8 columns) */}
         <div className="lg:col-span-8 space-y-8">
           
-          {/* Visual Summary Cards */}
+          {/* Visual Summary Cards - Updated for Continuity */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between h-32 relative overflow-hidden">
-               <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Entradas ({selectedMonth})</p>
-               <p className="text-3xl font-display font-bold text-gray-900">{formatCurrency(totals.inflow)}</p>
+             {/* Previous Balance */}
+             <div className="bg-gray-50 p-6 rounded-3xl shadow-sm border border-gray-200 flex flex-col justify-between h-32 relative overflow-hidden">
+               <div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Saldo Anterior</p>
+                    <p className="text-[10px] text-gray-400">Até final de {MONTHS[(MONTHS.indexOf(selectedMonth) - 1 + 12) % 12]}</p>
+               </div>
+               <p className={`text-2xl font-display font-bold ${previousBalance >= 0 ? 'text-gray-700' : 'text-red-500'}`}>
+                   {formatCurrency(previousBalance)}
+               </p>
              </div>
              
+             {/* Monthly Result */}
              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between h-32 relative overflow-hidden">
-               <p className="text-xs font-bold text-red-500 uppercase tracking-widest">Saídas ({selectedMonth})</p>
-               <p className="text-3xl font-display font-bold text-gray-900">{formatCurrency(totals.outflow)}</p>
+               <div>
+                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Resultado Mês</p>
+                   <p className="text-[10px] text-gray-400">Entradas - Saídas ({selectedMonth})</p>
+               </div>
+               <div className="flex justify-between items-end">
+                   <p className={`text-2xl font-display font-bold ${currentMonthResult >= 0 ? (viewContext === 'PF' ? 'text-govgreen' : 'text-govblue') : 'text-red-500'}`}>
+                       {formatCurrency(currentMonthResult)}
+                   </p>
+                   {/* Mini indicator */}
+                   <span className={`text-xs font-bold ${currentMonthResult >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                       {currentMonthResult >= 0 ? '▲ Superávit' : '▼ Déficit'}
+                   </span>
+               </div>
              </div>
              
+             {/* Final Accumulated Balance */}
              <div className={`p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-32 relative overflow-hidden transition-colors ${
-                 totals.inflow - totals.outflow >= 0 ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white border-transparent` : 'bg-red-50 border-red-200'
+                 accumulatedBalance >= 0 ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white border-transparent` : 'bg-red-50 border-red-200'
              }`}>
                <p className={`text-xs font-bold uppercase tracking-widest ${
-                   totals.inflow - totals.outflow >= 0 ? 'text-white/80' : 'text-red-700'
-               }`}>Saldo do Mês</p>
+                   accumulatedBalance >= 0 ? 'text-white/80' : 'text-red-700'
+               }`}>Saldo Final (Acumulado)</p>
                <p className={`text-3xl font-display font-bold ${
-                   totals.inflow - totals.outflow >= 0 ? 'text-white' : 'text-red-600'
+                   accumulatedBalance >= 0 ? 'text-white' : 'text-red-600'
                }`}>
-                 {formatCurrency(totals.inflow - totals.outflow)}
+                 {formatCurrency(accumulatedBalance)}
                </p>
              </div>
           </div>
 
-          {/* Relationship / Cross Flow Visualization */}
-          {crossFlow.amount > 0 && (
-              <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-4 border border-gray-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 rounded-full text-purple-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                      </div>
-                      <div>
-                          <p className="text-xs font-bold text-gray-500 uppercase">Fluxo Cruzado detectado</p>
-                          <p className="text-sm font-medium text-gray-700">{crossFlow.label}</p>
-                      </div>
-                  </div>
-                  <div className="text-right">
-                       <span className="text-lg font-bold text-purple-700">{formatCurrency(crossFlow.amount)}</span>
-                  </div>
-              </div>
-          )}
-
           {/* List Style */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 min-h-[500px] flex flex-col">
-            <div className={`px-8 py-6 border-b border-gray-100 flex justify-between items-center ${themeBgLight} bg-opacity-30 rounded-t-3xl`}>
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
+            <div className={`px-8 py-6 border-b border-gray-100 flex justify-between items-center ${themeBgLight} bg-opacity-30 rounded-t-3xl flex-shrink-0`}>
               <h3 className="text-lg font-display font-bold text-gray-800">Lançamentos: {viewContext}</h3>
-              <p className="text-xs text-gray-400 font-normal">Clique no item para editar</p>
+              <p className="text-xs text-gray-400 font-normal">
+                {visibleTransactions.length} de {currentMonthTransactions.length} exibidos
+              </p>
             </div>
             
-            {currentMonthTransactions.length === 0 ? (
+            {sortedTransactions.length === 0 ? (
               <div className="flex-grow flex flex-col items-center justify-center p-12 text-center">
                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                     <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                 </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-2">Sem movimentações em {viewContext}</h4>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">Sem movimentações em {selectedMonth}/{selectedYear}</h4>
                 <p className="text-gray-500 max-w-sm">Adicione receitas ou despesas para visualizar o fluxo deste mês.</p>
               </div>
             ) : (
-              <div className="flex-grow overflow-x-auto">
-                <table className="min-w-full text-left">
-                  <thead className="border-b border-gray-100">
+              <div 
+                ref={listContainerRef}
+                onScroll={handleScroll}
+                className="flex-grow overflow-y-auto"
+              >
+                <table className="min-w-full text-left relative">
+                  <thead className="sticky top-0 bg-white shadow-sm z-10 border-b border-gray-100">
                     <tr>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Dia</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
-                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Valor</th>
-                      <th className="px-4 py-4 text-center"></th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Dia</th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Descrição</th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
+                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Valor</th>
+                      <th className="px-4 py-4 text-center bg-white"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {currentMonthTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((t) => (
+                    {visibleTransactions.map((t) => (
                       <tr 
                         key={t.id} 
                         onClick={() => handleEditClick(t)}
@@ -534,7 +882,12 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                            {t.date ? new Date(t.date).toLocaleDateString('pt-BR', {day: '2-digit'}) : '-'}
                         </td>
                         <td className="px-8 py-5">
-                          <div className="text-sm font-bold text-gray-800">{t.description}</div>
+                          <div className="flex items-center gap-2">
+                             <div className="text-sm font-bold text-gray-800">{t.description}</div>
+                             {t.isRecurring && (
+                                 <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded" title="Recorrente">↺</span>
+                             )}
+                          </div>
                            <div className="text-[10px] text-gray-400 mt-1">{t.category}</div>
                         </td>
                         <td className="px-8 py-5">
@@ -560,6 +913,19 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                         </td>
                       </tr>
                     ))}
+                    {isLoadingList && (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center">
+                           <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+                              <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Carregando mais itens...
+                           </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

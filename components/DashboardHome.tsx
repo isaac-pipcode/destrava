@@ -62,47 +62,44 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
 
   return (
     <div className="animate-fade-in-up">
-      {/* Hero Section */}
-      <div className="bg-white rounded-3xl shadow-sm border-l-8 border-govblue p-8 mb-10 relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <h2 className="text-4xl font-extrabold text-govblue tracking-tight mb-4">
-            Por uma gestão saudável e sustentável
-          </h2>
-          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-             Gerencie pagamentos e despesas, acompanhe o fluxo financeiro de seus trabalhos e produções, sem a dor de cabeça das planilhas.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <button 
-              onClick={() => onNavigate('manual_pj')}
-              className="px-6 py-3 bg-govblue text-white font-bold rounded-lg shadow-lg hover:bg-blue-800 transition-all transform hover:-translate-y-1"
-            >
-              Diário Pessoa Jurídica
-            </button>
-            <button 
-              onClick={() => onNavigate('import')}
-              className="px-6 py-3 bg-white text-govblue border-2 border-govblue font-bold rounded-lg hover:bg-blue-50 transition-all"
-            >
-              Diagnóstico IA
-            </button>
-            {transactions.length === 0 && (
-                <button 
-                onClick={loadDemoData}
-                className="px-6 py-3 text-gray-500 font-bold underline hover:text-govorange transition-all"
-                >
-                Simular Cenário (Demo)
-                </button>
-            )}
-          </div>
-        </div>
+      {/* Modern Artistic Hero Banner */}
+      <div className="w-full h-48 rounded-3xl mb-10 relative overflow-hidden bg-gradient-to-r from-govblue via-[#0d6db8] to-govgreen shadow-lg">
+        {/* Abstract Shapes Decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full transform translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 left-20 w-64 h-64 bg-govorange opacity-10 rounded-full transform translate-y-1/2 blur-2xl"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
         
-        {/* Abstract Background Decoration */}
-        <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-50 to-transparent hidden lg:block"></div>
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-govorange rounded-full opacity-10 blur-3xl"></div>
-        <div className="absolute right-40 top-10 w-40 h-40 bg-govgreen rounded-full opacity-10 blur-2xl"></div>
+        <div className="relative z-10 h-full flex flex-col justify-center px-10">
+            <div className="flex items-center gap-3 mb-2">
+                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-[10px] font-bold uppercase tracking-widest border border-white/20">
+                    Sustentabilidade
+                </span>
+                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-[10px] font-bold uppercase tracking-widest border border-white/20">
+                    Gestão
+                </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight max-w-2xl">
+                Por uma gestão saudável <br/>e sustentável
+            </h2>
+            <p className="text-white/80 mt-2 max-w-xl text-sm font-medium">
+                Fortalecendo a economia criativa através do controle e inteligência financeira.
+            </p>
+        </div>
       </div>
 
       {/* Cards de Saúde Financeira Separados */}
-      <h3 className="text-xl font-bold text-gray-800 mb-4 px-2">Visão Geral dos Saldos</h3>
+      <div className="flex justify-between items-end mb-4 px-2">
+        <h3 className="text-xl font-bold text-gray-800">Visão Geral dos Saldos</h3>
+        {transactions.length === 0 && (
+            <button 
+            onClick={loadDemoData}
+            className="text-sm font-bold text-govblue hover:text-govorange underline transition-colors"
+            >
+            Carregar dados de exemplo (Demo)
+            </button>
+        )}
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         
         {/* Card PJ - AZUL */}

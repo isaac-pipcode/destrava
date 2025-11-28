@@ -40,7 +40,9 @@ export interface Transaction {
   project?: string; 
   date: string; // ISO date string
   month: string; // e.g. "Julho"
-  entity: 'PF' | 'PJ'; // New field: Pessoa Física or Pessoa Jurídica
-  supplierDoc?: string; // CPF or CNPJ of the supplier (Mandatory for gov grants)
-  paymentDoc?: string; // Check number, Transaction ID, Pix ID
+  entity: 'PF' | 'PJ'; // Pessoa Física or Pessoa Jurídica
+  supplierDoc?: string; // CPF or CNPJ of the supplier
+  paymentDoc?: string; // Check number, Transaction ID
+  isRecurring?: boolean; // If generated automatically
+  relatedId?: string; // ID to link recurring series
 }
