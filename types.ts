@@ -44,6 +44,15 @@ export interface BudgetLineItem {
   plannedAmount: number;
 }
 
+export type BankName = 'Banco do Brasil' | 'Bradesco' | 'Caixa' | 'Itaú' | 'Nubank' | 'Santander' | 'Inter' | 'XP' | 'BTG' | 'Outros';
+
+export interface BankAccount {
+  id: string;
+  name: string; // e.g. "Conta Movimento", "Investimentos"
+  bank: BankName;
+  entityType: 'PF' | 'PJ';
+}
+
 export interface Transaction {
   id: string;
   description: string;
@@ -63,6 +72,9 @@ export interface Transaction {
   budgetLineId?: string; // Link to specific budget line
   projectStage?: ProjectStage;
   projectNature?: ExpenseNature;
+  
+  // Bank Account Link
+  accountId?: string;
 }
 
 export interface ProjectMetadata {
@@ -74,5 +86,6 @@ export interface ProjectMetadata {
   endDate?: string;
   origin: 'manual' | 'mapa_cultural';
   mapaCulturalId?: string;
+  proponentDoc?: string; // CPF or CNPJ of the proponent
   budgetLines?: BudgetLineItem[]; // Detailed budget
 }

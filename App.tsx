@@ -6,7 +6,7 @@ import ImportFlow from './components/ImportFlow'; // Serves as AI Diagnosis
 import Accountability from './components/Accountability';
 import Reports from './components/Reports';
 import Login from './components/Login';
-import { Transaction, ProjectMetadata } from './types';
+import { Transaction, ProjectMetadata, BankAccount } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports';
 
@@ -20,6 +20,12 @@ const App: React.FC = () => {
   
   // Centralized state for Projects (Accountability)
   const [projects, setProjects] = useState<ProjectMetadata[]>([]);
+
+  // Centralized state for Bank Accounts
+  const [accounts, setAccounts] = useState<BankAccount[]>([
+    { id: '1', name: 'Conta Principal PJ', bank: 'Banco do Brasil', entityType: 'PJ' },
+    { id: '2', name: 'Conta Pessoal', bank: 'Nubank', entityType: 'PF' }
+  ]);
   
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<string[]>([]);
@@ -59,6 +65,19 @@ const App: React.FC = () => {
     setCurrentView('dashboard');
   };
 
+  // Handle Create or Update Project
+  const handleSaveProject = (project: ProjectMetadata) => {
+    setProjects(prev => {
+      const exists = prev.some(p => p.id === project.id);
+      if (exists) {
+        // Update existing
+        return prev.map(p => p.id === project.id ? project : p);
+      }
+      // Create new
+      return [...prev, project];
+    });
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
@@ -77,7 +96,9 @@ const App: React.FC = () => {
             viewContext="PF"
             customCategories={customCategories}
             onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
-            projects={projects} // PF doesn't strictly need projects, but good to have
+            projects={projects}
+            accounts={accounts}
+            onAddAccount={(acc) => setAccounts(prev => [...prev, acc])}
           />
         );
       case 'manual_pj':
@@ -89,6 +110,8 @@ const App: React.FC = () => {
             customCategories={customCategories}
             onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
             projects={projects}
+            accounts={accounts}
+            onAddAccount={(acc) => setAccounts(prev => [...prev, acc])}
           />
         );
       case 'reports':
@@ -98,7 +121,7 @@ const App: React.FC = () => {
           <Accountability 
             transactions={transactions} 
             projects={projects}
-            onRegisterProject={(newProject) => setProjects(prev => [...prev, newProject])}
+            onSaveProject={handleSaveProject}
           />
         );
       case 'import':

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Transaction, ProjectMetadata, BudgetLineItem } from '../types';
+import { Transaction, ProjectMetadata, BudgetLineItem, BankAccount, BankName } from '../types';
 import { parseBankStatement } from '../services/geminiService';
 
 const MONTHS = [
@@ -98,6 +98,58 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     'Outros': 'Movimentações gerais não classificadas acima.'
 };
 
+// --- HELPER: Mask CPF/CNPJ ---
+export const maskCpfCnpj = (value: string) => {
+    // Remove everything that is not a digit
+    let v = value.replace(/\D/g, "");
+
+    if (v.length > 14) {
+        v = v.substring(0, 14);
+    }
+
+    if (v.length <= 11) {
+        // CPF Mask: 000.000.000-00
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+        // CNPJ Mask: 00.000.000/0000-00
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        v = v.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    return v;
+};
+
+// --- BANK LOGO COMPONENT ---
+const BankLogo: React.FC<{ bank: BankName; size?: 'sm' | 'md' | 'lg' }> = ({ bank, size = 'md' }) => {
+    const s = size === 'sm' ? 'w-5 h-5 text-[8px]' : size === 'md' ? 'w-8 h-8 text-[10px]' : 'w-12 h-12 text-xs';
+    
+    switch (bank) {
+        case 'Banco do Brasil':
+            return <div className={`${s} rounded-full bg-[#FFE600] text-[#0038A8] font-black flex items-center justify-center border-2 border-[#0038A8]`} title="Banco do Brasil">BB</div>;
+        case 'Bradesco':
+            return <div className={`${s} rounded-md bg-[#CC092F] text-white font-bold flex items-center justify-center`} title="Bradesco">B</div>;
+        case 'Caixa':
+            return <div className={`${s} rounded-full bg-[#005CA9] text-[#F7941D] font-black flex items-center justify-center`} title="Caixa">X</div>;
+        case 'Itaú':
+            return <div className={`${s} rounded-md bg-[#EC7000] text-[#0038A8] font-black flex items-center justify-center`} title="Itaú">I</div>;
+        case 'Nubank':
+            return <div className={`${s} rounded-full bg-[#820AD1] text-white font-bold flex items-center justify-center`} title="Nubank">Nu</div>;
+        case 'Santander':
+            return <div className={`${s} rounded-full bg-[#EC0000] text-white font-bold flex items-center justify-center`} title="Santander">S</div>;
+        case 'Inter':
+            return <div className={`${s} rounded-md bg-[#FF7A00] text-white font-bold flex items-center justify-center`} title="Inter">in</div>;
+        case 'XP':
+            return <div className={`${s} rounded-full bg-black text-[#FFC400] font-bold flex items-center justify-center border border-[#FFC400]`} title="XP">XP</div>;
+        case 'BTG':
+            return <div className={`${s} rounded-full bg-[#002B49] text-white font-bold flex items-center justify-center`} title="BTG">BTG</div>;
+        default:
+            return <div className={`${s} rounded-full bg-gray-200 text-gray-500 font-bold flex items-center justify-center`}>?</div>;
+    }
+};
+
 interface ManualManagerProps {
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
@@ -105,9 +157,14 @@ interface ManualManagerProps {
   customCategories: string[];
   onAddCategory: (category: string) => void;
   projects?: ProjectMetadata[];
+  accounts?: BankAccount[];
+  onAddAccount?: (account: BankAccount) => void;
 }
 
-const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransactions, viewContext, customCategories, onAddCategory, projects = [] }) => {
+const ManualManager: React.FC<ManualManagerProps> = ({ 
+    transactions, setTransactions, viewContext, customCategories, onAddCategory, 
+    projects = [], accounts = [], onAddAccount 
+}) => {
   const todayDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[todayDate.getMonth()]);
   const [selectedYear, setSelectedYear] = useState<number>(todayDate.getFullYear());
@@ -129,6 +186,14 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'inflow' | 'outflow'>('inflow');
   const [category, setCategory] = useState('');
+  
+  // Account Selection
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+  
+  // Account Management State
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBank, setNewAccountBank] = useState<BankName>('Banco do Brasil');
   
   // Project & Budget Linkage
   const [project, setProject] = useState('');
@@ -155,6 +220,18 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
   const themeBgDark = viewContext === 'PF' ? 'dark:bg-green-900/20' : 'dark:bg-blue-900/20';
   const themeText = viewContext === 'PF' ? 'text-govgreen' : 'text-govblue';
   const themeBorder = viewContext === 'PF' ? 'border-govgreen' : 'border-govblue';
+
+  // Filter accounts by context
+  const contextAccounts = useMemo(() => {
+      return accounts.filter(a => a.entityType === viewContext);
+  }, [accounts, viewContext]);
+
+  // Set default account
+  useEffect(() => {
+      if (contextAccounts.length > 0 && !selectedAccountId) {
+          setSelectedAccountId(contextAccounts[0].id);
+      }
+  }, [contextAccounts, selectedAccountId]);
 
   // Determine available categories based on context and type
   const availableCategories = useMemo(() => {
@@ -216,6 +293,19 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
       }
   };
 
+  const handleAddAccount = () => {
+      if(newAccountName.trim() && onAddAccount) {
+          onAddAccount({
+              id: crypto.randomUUID(),
+              name: newAccountName,
+              bank: newAccountBank,
+              entityType: viewContext
+          });
+          setIsAddingAccount(false);
+          setNewAccountName('');
+      }
+  };
+
   const changeMonth = (offset: number) => {
     const currentIndex = MONTHS.indexOf(selectedMonth);
     let newIndex = currentIndex + offset;
@@ -259,6 +349,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
 
     setSupplierDoc(t.supplierDoc || '');
     setPaymentDoc(t.paymentDoc || '');
+    if (t.accountId) setSelectedAccountId(t.accountId);
     setEditId(t.id);
     
     // Switch view to transaction's date
@@ -317,7 +408,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             type,
             category, // This will be the Expense Item name if Budget Line is selected
             project: finalProjectName,
-            supplierDoc,
+            supplierDoc, // Now comes pre-masked from input
             paymentDoc,
             date: dateObj.toISOString(),
             month: monthName,
@@ -328,7 +419,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             // New LPG Fields
             budgetLineId: budgetLineId || undefined,
             projectStage: linkedBudgetLine?.stage,
-            projectNature: linkedBudgetLine?.nature
+            projectNature: linkedBudgetLine?.nature,
+            
+            // Account Link
+            accountId: selectedAccountId
         });
     }
 
@@ -409,7 +503,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
              ...item,
              month: itemMonth,
              project: '',
-             entity: viewContext
+             entity: viewContext,
+             accountId: selectedAccountId
            };
         });
 
@@ -456,7 +551,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
 
   // 3. Sorting & Lazy Loading
   const sortedTransactions = useMemo(() => {
-    return currentMonthTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return currentMonthTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(b.date).getTime());
   }, [currentMonthTransactions]);
 
   const visibleTransactions = useMemo(() => {
@@ -651,6 +746,63 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
               </div>
           )}
 
+          {/* Manage Accounts Widget */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-slate-700">
+               <div className="flex justify-between items-center mb-2">
+                   <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Minhas Contas</h4>
+                   <button 
+                    onClick={() => setIsAddingAccount(!isAddingAccount)} 
+                    className={`text-xs font-bold ${themeText} hover:underline`}
+                   >
+                       {isAddingAccount ? 'Cancelar' : '+ Nova Conta'}
+                   </button>
+               </div>
+               
+               {isAddingAccount ? (
+                   <div className="space-y-2 mb-2 animate-fade-in">
+                       <input 
+                         type="text" 
+                         value={newAccountName}
+                         onChange={e => setNewAccountName(e.target.value)}
+                         placeholder="Nome da Conta (ex: Investimento)"
+                         className="w-full text-sm border rounded p-2 dark:bg-slate-900 dark:border-slate-600 dark:text-white"
+                       />
+                       <select 
+                         value={newAccountBank}
+                         onChange={e => setNewAccountBank(e.target.value as BankName)}
+                         className="w-full text-sm border rounded p-2 dark:bg-slate-900 dark:border-slate-600 dark:text-white"
+                       >
+                           {['Banco do Brasil', 'Bradesco', 'Caixa', 'Itaú', 'Nubank', 'Santander', 'Inter', 'XP', 'BTG', 'Outros'].map(b => (
+                               <option key={b} value={b}>{b}</option>
+                           ))}
+                       </select>
+                       <button onClick={handleAddAccount} className={`w-full py-1.5 rounded text-xs text-white font-bold ${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'}`}>
+                           Salvar Conta
+                       </button>
+                   </div>
+               ) : (
+                    <div className="flex gap-2 overflow-x-auto pb-2 custom-scroll">
+                        {contextAccounts.map(acc => (
+                            <div 
+                                key={acc.id} 
+                                onClick={() => setSelectedAccountId(acc.id)}
+                                className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer min-w-[140px] transition-all
+                                    ${selectedAccountId === acc.id 
+                                        ? `border-${themeColor} bg-gray-50 dark:bg-slate-700 ring-1 ring-${themeColor}` 
+                                        : 'border-gray-100 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                    }
+                                `}
+                            >
+                                <BankLogo bank={acc.bank} size="sm" />
+                                <div className="truncate text-xs font-bold text-gray-700 dark:text-gray-300">
+                                    {acc.name}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+               )}
+          </div>
+
           {/* Form Card */}
           <div className={`bg-white dark:bg-slate-800 rounded-3xl shadow-sm p-8 border-t-8 ${themeBorder}`}>
             <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100 dark:border-slate-700">
@@ -687,6 +839,26 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                   className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
                   required
                 />
+              </div>
+              
+              {/* Account Selection Field */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Conta Bancária</label>
+                <div className="relative">
+                    <select
+                        value={selectedAccountId}
+                        onChange={(e) => setSelectedAccountId(e.target.value)}
+                        className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor} appearance-none`}
+                    >
+                        {contextAccounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>{acc.name} ({acc.bank})</option>
+                        ))}
+                    </select>
+                    {/* Visual hint of selected bank logo inside select (simulated via absolute) */}
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                         {selectedAccountId && <BankLogo bank={contextAccounts.find(a => a.id === selectedAccountId)?.bank || 'Outros'} size="sm"/>}
+                    </div>
+                </div>
               </div>
 
                {/* Project Selection / Source Field */}
@@ -740,12 +912,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                       <p className="text-[10px] font-bold text-gray-400 uppercase">Dados para Prestação de Contas</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">CPF/CNPJ</label>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">CPF/CNPJ Fornecedor</label>
                             <input 
                             type="text" 
                             value={supplierDoc}
-                            onChange={(e) => setSupplierDoc(e.target.value)}
-                            placeholder="00.000..."
+                            onChange={(e) => setSupplierDoc(maskCpfCnpj(e.target.value))}
+                            placeholder="00.000.000/0000-00"
+                            maxLength={18}
                             className="w-full rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                             />
                         </div>
@@ -970,10 +1143,11 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                 <table className="min-w-full text-left relative">
                   <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm z-10 border-b border-gray-100 dark:border-slate-700">
                     <tr>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Dia</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
-                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Valor</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Dia</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
+                      <th className="px-4 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Conta</th>
+                      <th className="px-4 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Valor</th>
                       <th className="px-4 py-4 text-center"></th>
                     </tr>
                   </thead>
@@ -984,10 +1158,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                         onClick={() => handleEditClick(t)}
                         className={`cursor-pointer transition-colors group ${editId === t.id ? 'bg-orange-50 dark:bg-orange-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-700'}`}
                       >
-                        <td className="px-8 py-5 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <td className="px-6 py-5 text-sm font-medium text-gray-500 dark:text-gray-400">
                            {t.date ? new Date(t.date).toLocaleDateString('pt-BR', {day: '2-digit'}) : '-'}
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-5">
                           <div className="flex items-center gap-2">
                              <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{t.description}</div>
                              {t.isRecurring && (
@@ -999,14 +1173,21 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                                {t.projectStage && <span className="ml-1 px-1 bg-gray-100 dark:bg-slate-600 rounded">({t.projectStage})</span>}
                            </div>
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="px-4 py-5">
+                             {t.accountId ? (
+                                 <div className="flex items-center gap-2">
+                                     <BankLogo bank={accounts.find(a => a.id === t.accountId)?.bank || 'Outros'} size="sm" />
+                                 </div>
+                             ) : <span className="text-gray-300">-</span>}
+                        </td>
+                        <td className="px-4 py-5">
                           {t.project ? (
                              <span className={`px-2 py-1 rounded text-[10px] font-bold border ${themeBgLight} dark:bg-slate-700 ${themeText} dark:text-gray-300 ${themeBorder} border-opacity-30 dark:border-slate-600`}>
                                 {t.project}
                              </span>
                           ) : <span className="text-gray-300 dark:text-gray-600 text-xs">-</span>}
                         </td>
-                        <td className={`px-8 py-5 text-right font-bold text-sm ${
+                        <td className={`px-6 py-5 text-right font-bold text-sm ${
                           t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
                         }`}>
                           {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
@@ -1024,7 +1205,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                     ))}
                     {isLoadingList && (
                       <tr>
-                        <td colSpan={5} className="py-6 text-center">
+                        <td colSpan={6} className="py-6 text-center">
                            <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest animate-pulse">
                               <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

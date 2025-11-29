@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Transaction, ProjectMetadata, BudgetLineItem, ProjectStage, ExpenseNature } from '../types';
+import { maskCpfCnpj } from './ManualManager'; // Import reuse mask logic
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -9,27 +10,30 @@ import {
 interface AccountabilityProps {
   transactions: Transaction[];
   projects: ProjectMetadata[];
-  onRegisterProject: (project: ProjectMetadata) => void;
+  onSaveProject: (project: ProjectMetadata) => void;
 }
 
 const COLORS = ['#1351b4', '#009a44', '#f37021', '#475569', '#94a3b8', '#e2e8f0'];
 
-const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onRegisterProject }) => {
+const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onSaveProject }) => {
   // Navigation & Selection State
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'report' | 'guide'>('dashboard');
   const [viewMode, setViewMode] = useState<'select' | 'register' | 'import'>('select');
   
   // Register Form State
+  // We add 'id' to partial to track if we are editing an existing project
   const [newProject, setNewProject] = useState<Partial<ProjectMetadata>>({ legislation: 'LPG', budget: 0 });
   const [budgetLines, setBudgetLines] = useState<BudgetLineItem[]>([]);
   
   // Budget Line Input State
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [lineActivity, setLineActivity] = useState('');
   const [lineItem, setLineItem] = useState('');
   const [lineStage, setLineStage] = useState<ProjectStage>('Produção');
   const [lineNature, setLineNature] = useState<ExpenseNature>('Serviço (PF/PJ)');
   const [lineValue, setLineValue] = useState('');
+  const [lineError, setLineError] = useState('');
 
   // Import State
   const [importTerm, setImportTerm] = useState('');
@@ -118,27 +122,85 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
 
   // --- Actions ---
 
+  const handleEditProject = () => {
+    if (!activeProjectData) return;
+    
+    // Populate form with existing data
+    setNewProject({
+        id: activeProjectData.id,
+        name: activeProjectData.name,
+        legislation: activeProjectData.legislation,
+        budget: activeProjectData.budget,
+        startDate: activeProjectData.startDate,
+        proponentDoc: activeProjectData.proponentDoc
+    });
+    
+    setBudgetLines(activeProjectData.budgetLines || []);
+    setViewMode('register');
+  };
+
   const handleAddBudgetLine = () => {
-      if(!lineActivity || !lineItem || !lineValue) return;
-      const newLine: BudgetLineItem = {
-          id: crypto.randomUUID(),
-          activity: lineActivity,
-          expenseItem: lineItem,
-          stage: lineStage,
-          nature: lineNature,
-          plannedAmount: parseFloat(lineValue)
-      };
-      setBudgetLines([...budgetLines, newLine]);
+      if(!lineActivity || !lineItem || !lineValue) {
+          setLineError('Preencha todos os campos da rubrica.');
+          return;
+      }
+      
+      const val = parseFloat(lineValue);
+
+      if (editingLineId) {
+        // Update existing line
+        setBudgetLines(prev => prev.map(line => {
+            if (line.id === editingLineId) {
+                return {
+                    ...line,
+                    activity: lineActivity,
+                    expenseItem: lineItem,
+                    stage: lineStage,
+                    nature: lineNature,
+                    plannedAmount: val
+                };
+            }
+            return line;
+        }));
+        setEditingLineId(null);
+      } else {
+        // Add new line
+        const newLine: BudgetLineItem = {
+            id: crypto.randomUUID(),
+            activity: lineActivity,
+            expenseItem: lineItem,
+            stage: lineStage,
+            nature: lineNature,
+            plannedAmount: val
+        };
+        setBudgetLines([...budgetLines, newLine]);
+      }
+      
       setLineItem('');
       setLineValue('');
+      setLineError('');
       // Keep Activity/Stage/Nature as they are often repetitive
+  };
+
+  const handleEditLine = (line: BudgetLineItem) => {
+    setLineActivity(line.activity);
+    setLineItem(line.expenseItem);
+    setLineStage(line.stage);
+    setLineNature(line.nature);
+    setLineValue(line.plannedAmount.toString());
+    setEditingLineId(line.id);
   };
 
   const removeBudgetLine = (id: string) => {
       setBudgetLines(budgetLines.filter(l => l.id !== id));
+      if (editingLineId === id) {
+          setEditingLineId(null);
+          setLineItem('');
+          setLineValue('');
+      }
   };
 
-  const handleRegisterProject = (e: React.FormEvent) => {
+  const handleSaveProjectInternal = (e: React.FormEvent) => {
       e.preventDefault();
       if (!newProject.name) return;
 
@@ -148,20 +210,24 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
           : (newProject.budget || 0);
 
       const project: ProjectMetadata = {
-          id: crypto.randomUUID(),
+          id: newProject.id || crypto.randomUUID(), // Use existing ID if editing
           name: newProject.name,
           legislation: newProject.legislation || 'Outros',
           budget: calculatedBudget,
           startDate: newProject.startDate || new Date().toISOString(),
-          origin: 'manual',
-          budgetLines: budgetLines
+          origin: newProject.origin || 'manual',
+          budgetLines: budgetLines,
+          proponentDoc: newProject.proponentDoc // Save Proponent Doc
       };
 
-      onRegisterProject(project);
+      onSaveProject(project);
       setSelectedProjectId(project.id);
       setViewMode('select');
-      setNewProject({ legislation: 'LPG', budget: 0 });
+      // Reset form
+      setNewProject({ legislation: 'LPG', budget: 0, proponentDoc: '' });
       setBudgetLines([]);
+      setLineError('');
+      setEditingLineId(null);
   };
 
   const handleImportMapaCultural = () => {
@@ -177,13 +243,14 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
               startDate: "2024-03-01",
               origin: 'mapa_cultural',
               mapaCulturalId: importTerm,
+              proponentDoc: "12.345.678/0001-90",
               budgetLines: [
                   { id: '1', activity: 'Pré-produção', expenseItem: 'Curadoria', stage: 'Pré-Produção', nature: 'Cachê', plannedAmount: 5000 },
                   { id: '2', activity: 'Produção', expenseItem: 'Equipamento de Som', stage: 'Produção', nature: 'Bens Duráveis/Equipamentos', plannedAmount: 20000 },
               ]
           };
 
-          onRegisterProject(mockProject);
+          onSaveProject(mockProject);
           setSelectedProjectId(mockProject.id);
           setIsImporting(false);
           setImportTerm('');
@@ -310,17 +377,24 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                   </div>
               )}
 
-              {/* REGISTER FORM WITH BUDGET BUILDER */}
+              {/* REGISTER/EDIT FORM WITH BUDGET BUILDER */}
               {viewMode === 'register' && (
                   <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 mt-6">
                       <div className="flex items-center gap-3 mb-6">
-                          <button onClick={() => setViewMode('select')} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
+                          <button onClick={() => {
+                              setViewMode('select');
+                              setNewProject({ legislation: 'LPG', budget: 0, proponentDoc: '' });
+                              setBudgetLines([]);
+                              setEditingLineId(null);
+                          }} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                           </button>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Novo Projeto Cultural</h3>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                              {newProject.id ? 'Editar Projeto Cultural' : 'Novo Projeto Cultural'}
+                          </h3>
                       </div>
                       
-                      <form onSubmit={handleRegisterProject} className="space-y-6">
+                      <form onSubmit={handleSaveProjectInternal} className="space-y-6">
                           {/* Basic Info */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="md:col-span-2">
@@ -331,7 +405,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                       placeholder="Ex: Curta-metragem O Sol do Sertão"
                                       value={newProject.name || ''}
                                       onChange={e => setNewProject({...newProject, name: e.target.value})}
-                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
                                   />
                               </div>
                               <div>
@@ -339,7 +413,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                   <select 
                                       value={newProject.legislation}
                                       onChange={e => setNewProject({...newProject, legislation: e.target.value})}
-                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
                                   >
                                       <option value="LPG">Lei Paulo Gustavo</option>
                                       <option value="PNAB">Aldir Blanc (PNAB)</option>
@@ -349,12 +423,29 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                               </div>
                               <div>
                                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Início da Vigência</label>
+                                  <div className="relative">
+                                      <input 
+                                          type="date" 
+                                          required
+                                          value={newProject.startDate ? newProject.startDate.substring(0, 10) : ''}
+                                          onChange={e => setNewProject({...newProject, startDate: e.target.value})}
+                                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none appearance-none cursor-pointer"
+                                      />
+                                      <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500 dark:text-gray-400">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div className="md:col-span-2">
+                                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">CPF/CNPJ do Proponente</label>
                                   <input 
-                                      type="date" 
+                                      type="text" 
                                       required
-                                      value={newProject.startDate ? newProject.startDate.substring(0, 10) : ''}
-                                      onChange={e => setNewProject({...newProject, startDate: e.target.value})}
-                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                      placeholder="00.000.000/0000-00"
+                                      value={newProject.proponentDoc || ''}
+                                      onChange={e => setNewProject({...newProject, proponentDoc: maskCpfCnpj(e.target.value)})}
+                                      maxLength={18}
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
                                   />
                               </div>
                           </div>
@@ -362,21 +453,43 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                           {/* Budget Builder Section */}
                           <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
                               <h4 className="font-bold text-lg text-gray-800 dark:text-white mb-2">Planejamento Orçamentário (Planilha de Aplicação)</h4>
-                              <p className="text-sm text-gray-500 mb-4">Adicione as rubricas conforme aprovado no projeto.</p>
+                              <p className="text-sm text-gray-500 mb-4">Adicione ou edite as rubricas conforme aprovado no projeto.</p>
                               
-                              <div className="bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-200 dark:border-slate-600 mb-4">
+                              <div className={`p-4 rounded-xl border border-gray-200 dark:border-slate-600 mb-4 transition-colors ${editingLineId ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200' : 'bg-gray-50 dark:bg-slate-900/50'}`}>
+                                  {editingLineId && (
+                                      <div className="flex justify-between items-center mb-2">
+                                          <span className="text-xs font-bold text-govblue dark:text-blue-400 uppercase">✏️ Editando Rubrica</span>
+                                          <button type="button" onClick={() => { setEditingLineId(null); setLineItem(''); setLineValue(''); }} className="text-xs text-gray-500 hover:text-red-500">Cancelar Edição</button>
+                                      </div>
+                                  )}
                                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
                                       <div className="md:col-span-3">
-                                          <label className="text-xs font-bold text-gray-500 uppercase">Atividade / Ação</label>
-                                          <input type="text" placeholder="Ex: Filmagem" value={lineActivity} onChange={e => setLineActivity(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                          <label className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">Atividade / Ação</label>
+                                          <input 
+                                            type="text" 
+                                            placeholder="Ex: Filmagem" 
+                                            value={lineActivity} 
+                                            onChange={e => {setLineActivity(e.target.value); setLineError('');}} 
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-govblue focus:border-transparent outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white ${lineError && !lineActivity ? 'border-red-400' : ''}`} 
+                                          />
                                       </div>
                                       <div className="md:col-span-3">
-                                          <label className="text-xs font-bold text-gray-500 uppercase">Item de Despesa</label>
-                                          <input type="text" placeholder="Ex: Operador de Câmera" value={lineItem} onChange={e => setLineItem(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                          <label className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">Item de Despesa</label>
+                                          <input 
+                                            type="text" 
+                                            placeholder="Ex: Operador de Câmera" 
+                                            value={lineItem} 
+                                            onChange={e => {setLineItem(e.target.value); setLineError('');}} 
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-govblue focus:border-transparent outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white ${lineError && !lineItem ? 'border-red-400' : ''}`} 
+                                          />
                                       </div>
                                       <div className="md:col-span-2">
-                                          <label className="text-xs font-bold text-gray-500 uppercase">Etapa</label>
-                                          <select value={lineStage} onChange={e => setLineStage(e.target.value as ProjectStage)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                                          <label className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">Etapa</label>
+                                          <select 
+                                            value={lineStage} 
+                                            onChange={e => setLineStage(e.target.value as ProjectStage)} 
+                                            className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-govblue focus:border-transparent outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                                          >
                                               <option>Pré-Produção</option>
                                               <option>Produção</option>
                                               <option>Pós-Produção</option>
@@ -385,8 +498,12 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                           </select>
                                       </div>
                                       <div className="md:col-span-2">
-                                          <label className="text-xs font-bold text-gray-500 uppercase">Natureza</label>
-                                          <select value={lineNature} onChange={e => setLineNature(e.target.value as ExpenseNature)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                                          <label className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">Natureza</label>
+                                          <select 
+                                            value={lineNature} 
+                                            onChange={e => setLineNature(e.target.value as ExpenseNature)} 
+                                            className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-govblue focus:border-transparent outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                                          >
                                               <option>Cachê</option>
                                               <option>Serviço (PF/PJ)</option>
                                               <option>Material de Consumo</option>
@@ -395,20 +512,29 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                           </select>
                                       </div>
                                       <div className="md:col-span-2">
-                                          <label className="text-xs font-bold text-gray-500 uppercase">Valor (R$)</label>
-                                          <input type="number" placeholder="0.00" value={lineValue} onChange={e => setLineValue(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                          <label className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">Valor (R$)</label>
+                                          <input 
+                                            type="number" 
+                                            placeholder="0.00" 
+                                            value={lineValue} 
+                                            onChange={e => {setLineValue(e.target.value); setLineError('');}} 
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-govblue focus:border-transparent outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-white ${lineError && !lineValue ? 'border-red-400' : ''}`} 
+                                          />
                                       </div>
                                   </div>
-                                  <button type="button" onClick={handleAddBudgetLine} className="w-full py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 transition-colors">
-                                      + Adicionar Rubrica
+                                  {lineError && (
+                                      <p className="text-xs text-red-500 font-bold mb-2 animate-pulse">{lineError}</p>
+                                  )}
+                                  <button type="button" onClick={handleAddBudgetLine} className={`w-full py-2 rounded-lg text-sm font-bold transition-colors ${editingLineId ? 'bg-govblue text-white hover:bg-blue-600' : 'bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200'}`}>
+                                      {editingLineId ? 'Atualizar Rubrica' : '+ Adicionar Rubrica'}
                                   </button>
                               </div>
 
                               {/* Budget Lines List */}
                               {budgetLines.length > 0 && (
-                                  <div className="mb-6 overflow-x-auto">
+                                  <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-600">
                                       <table className="w-full text-sm text-left">
-                                          <thead className="bg-gray-100 dark:bg-slate-700 text-xs uppercase text-gray-500">
+                                          <thead className="bg-gray-100 dark:bg-slate-700 text-xs uppercase text-gray-700 dark:text-gray-400 font-bold">
                                               <tr>
                                                   <th className="px-3 py-2">Etapa</th>
                                                   <th className="px-3 py-2">Item</th>
@@ -416,19 +542,20 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                                   <th className="px-3 py-2"></th>
                                               </tr>
                                           </thead>
-                                          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                          <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                                               {budgetLines.map(line => (
-                                                  <tr key={line.id}>
-                                                      <td className="px-3 py-2 dark:text-gray-300">{line.stage}</td>
-                                                      <td className="px-3 py-2 font-medium dark:text-white">{line.expenseItem} <span className="text-xs text-gray-400">({line.nature})</span></td>
-                                                      <td className="px-3 py-2 text-right dark:text-gray-300">{formatCurrency(line.plannedAmount)}</td>
-                                                      <td className="px-3 py-2 text-right">
-                                                          <button type="button" onClick={() => removeBudgetLine(line.id)} className="text-red-400 hover:text-red-600">×</button>
+                                                  <tr key={line.id} className={`group hover:bg-gray-50 dark:hover:bg-slate-700/50 ${editingLineId === line.id ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-white dark:bg-slate-800'}`}>
+                                                      <td className="px-3 py-2 text-gray-800 dark:text-gray-300">{line.stage}</td>
+                                                      <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">{line.expenseItem} <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">({line.nature})</span></td>
+                                                      <td className="px-3 py-2 text-right text-gray-800 dark:text-gray-300">{formatCurrency(line.plannedAmount)}</td>
+                                                      <td className="px-3 py-2 text-right flex justify-end gap-2">
+                                                          <button type="button" onClick={() => handleEditLine(line)} className="text-blue-400 hover:text-blue-600 font-bold" title="Editar">✎</button>
+                                                          <button type="button" onClick={() => removeBudgetLine(line.id)} className="text-red-400 hover:text-red-600 font-bold" title="Remover">×</button>
                                                       </td>
                                                   </tr>
                                               ))}
-                                              <tr className="bg-gray-50 dark:bg-slate-800 font-bold">
-                                                  <td colSpan={2} className="px-3 py-2 text-right">TOTAL DO ORÇAMENTO:</td>
+                                              <tr className="bg-gray-50 dark:bg-slate-800 font-bold border-t border-gray-200 dark:border-slate-700">
+                                                  <td colSpan={2} className="px-3 py-2 text-right text-gray-700 dark:text-gray-300">TOTAL DO ORÇAMENTO:</td>
                                                   <td className="px-3 py-2 text-right text-govblue dark:text-blue-400">
                                                       {formatCurrency(budgetLines.reduce((acc, curr) => acc + curr.plannedAmount, 0))}
                                                   </td>
@@ -441,7 +568,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                           </div>
 
                           <button type="submit" className="w-full py-4 bg-govblue hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors">
-                              Salvar Projeto e Orçamento
+                              {newProject.id ? 'Salvar Alterações do Projeto' : 'Salvar Novo Projeto'}
                           </button>
                       </form>
                   </div>
@@ -498,7 +625,15 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
             {/* Project Header Info */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 mb-6">
                 <div>
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">{activeProjectData.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-white">{activeProjectData.name}</h3>
+                        <button 
+                            onClick={handleEditProject}
+                            className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded text-gray-600 dark:text-gray-300 font-bold flex items-center gap-1"
+                        >
+                            ✏️ Editar Projeto e Orçamento
+                        </button>
+                    </div>
                     <div className="flex gap-2 mt-1">
                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             {activeProjectData.legislation}
@@ -506,6 +641,11 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
                             Orçamento: {formatCurrency(activeProjectData.budget)}
                         </span>
+                        {activeProjectData.proponentDoc && (
+                             <span className="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                                CPF/CNPJ: {activeProjectData.proponentDoc}
+                             </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -694,7 +834,9 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                             </td>
                                             <td className="px-4 py-4">
                                                 <p className="text-gray-800 dark:text-gray-200 text-xs font-bold">{t.description}</p>
-                                                <p className="text-[10px] text-gray-400 font-mono">{t.supplierDoc}</p>
+                                                <p className="text-[10px] text-gray-400 font-mono">
+                                                    {t.supplierDoc ? maskCpfCnpj(t.supplierDoc) : ''}
+                                                </p>
                                             </td>
                                             <td className={`px-4 py-4 text-right font-bold font-mono ${t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                                                 {t.type === 'outflow' ? '-' : '+'} {formatCurrency(t.amount)}
