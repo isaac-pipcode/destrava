@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Transaction } from '../types';
+import { Transaction, ProjectMetadata, BudgetLineItem } from '../types';
 import { parseBankStatement } from '../services/geminiService';
 
 const MONTHS = [
@@ -103,9 +104,10 @@ interface ManualManagerProps {
   viewContext: 'PF' | 'PJ';
   customCategories: string[];
   onAddCategory: (category: string) => void;
+  projects?: ProjectMetadata[];
 }
 
-const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransactions, viewContext, customCategories, onAddCategory }) => {
+const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransactions, viewContext, customCategories, onAddCategory, projects = [] }) => {
   const todayDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[todayDate.getMonth()]);
   const [selectedYear, setSelectedYear] = useState<number>(todayDate.getFullYear());
@@ -127,7 +129,12 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'inflow' | 'outflow'>('inflow');
   const [category, setCategory] = useState('');
+  
+  // Project & Budget Linkage
   const [project, setProject] = useState('');
+  const [customProjectName, setCustomProjectName] = useState('');
+  const [budgetLineId, setBudgetLineId] = useState(''); // Stores link to detailed budget
+
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
@@ -145,6 +152,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
   // Theme Colors
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
   const themeBgLight = viewContext === 'PF' ? 'bg-green-50' : 'bg-blue-50';
+  const themeBgDark = viewContext === 'PF' ? 'dark:bg-green-900/20' : 'dark:bg-blue-900/20';
   const themeText = viewContext === 'PF' ? 'text-govgreen' : 'text-govblue';
   const themeBorder = viewContext === 'PF' ? 'border-govgreen' : 'border-govblue';
 
@@ -185,6 +193,20 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     };
   }, []);
 
+  // Determine if selected project has detailed budget lines
+  const selectedProjectBudgetLines = useMemo(() => {
+      const selectedProj = projects.find(p => p.name === project);
+      return selectedProj?.budgetLines || [];
+  }, [projects, project]);
+
+  const handleBudgetLineSelect = (lineId: string) => {
+      setBudgetLineId(lineId);
+      const line = selectedProjectBudgetLines.find(l => l.id === lineId);
+      if (line) {
+          setCategory(line.expenseItem); // Override generic category with the specific Item Name
+      }
+  };
+
   const handleAddCustomCategory = () => {
       if (newCategoryName.trim()) {
           onAddCategory(newCategoryName.trim());
@@ -222,7 +244,19 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setAmount(t.amount.toString());
     setType(t.type);
     setCategory(t.category);
-    setProject(t.project || '');
+    
+    // Logic to populate Project Select vs Custom
+    const knownProject = projects.find(p => p.name === t.project);
+    if (knownProject || !t.project) {
+        setProject(t.project || '');
+        setCustomProjectName('');
+        // If it has a linked budget line, set it
+        setBudgetLineId(t.budgetLineId || '');
+    } else {
+        setProject('custom');
+        setCustomProjectName(t.project);
+    }
+
     setSupplierDoc(t.supplierDoc || '');
     setPaymentDoc(t.paymentDoc || '');
     setEditId(t.id);
@@ -241,6 +275,18 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
 
     const numAmount = parseFloat(amount.replace(',', '.'));
     
+    // Resolve Project Name
+    let finalProjectName = project;
+    if (project === 'custom') {
+        finalProjectName = customProjectName;
+    }
+
+    // Identify Budget Line Data if available
+    let linkedBudgetLine: BudgetLineItem | undefined;
+    if (budgetLineId) {
+        linkedBudgetLine = selectedProjectBudgetLines.find(l => l.id === budgetLineId);
+    }
+
     // Generate Transactions (1 or many if recurring)
     const newTransactions: Transaction[] = [];
     const loopCount = editId ? 1 : (isRecurring ? recurrenceMonths : 1);
@@ -269,15 +315,20 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             description: loopCount > 1 ? `${description} (${i+1}/${loopCount})` : description,
             amount: numAmount,
             type,
-            category,
-            project,
+            category, // This will be the Expense Item name if Budget Line is selected
+            project: finalProjectName,
             supplierDoc,
             paymentDoc,
             date: dateObj.toISOString(),
             month: monthName,
             entity: viewContext,
             isRecurring: loopCount > 1,
-            relatedId
+            relatedId,
+            
+            // New LPG Fields
+            budgetLineId: budgetLineId || undefined,
+            projectStage: linkedBudgetLine?.stage,
+            projectNature: linkedBudgetLine?.nature
         });
     }
 
@@ -291,6 +342,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setDescription('');
     setAmount('');
     setProject('');
+    setCustomProjectName('');
+    setBudgetLineId('');
     setSupplierDoc('');
     setPaymentDoc('');
     setEditId(null);
@@ -302,6 +355,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
     setDescription('');
     setAmount('');
     setProject('');
+    setCustomProjectName('');
+    setBudgetLineId('');
     setSupplierDoc('');
     setPaymentDoc('');
     setEditId(null);
@@ -459,22 +514,22 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
   return (
     <div className="max-w-6xl mx-auto animate-fade-in-up pb-12">
       {/* Context Header */}
-      <div className={`mb-8 border-l-8 ${themeBorder} bg-white rounded-r-xl shadow-sm p-6 flex flex-col md:flex-row justify-between items-center`}>
+      <div className={`mb-8 border-l-8 ${themeBorder} bg-white dark:bg-slate-800 rounded-r-xl shadow-sm p-6 flex flex-col md:flex-row justify-between items-center transition-colors`}>
         <div>
           <h2 className={`text-3xl font-display font-bold ${themeText}`}>
              Diário Financeiro: {viewContext === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
           </h2>
-          <p className="text-gray-500 mt-1">
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
              {viewContext === 'PF' ? 'Controle seus gastos pessoais e sobrevivência.' : 'Gerencie editais, cachês, produção e impostos.'}
           </p>
         </div>
         
         {/* Visual Month/Year Picker */}
         <div className="mt-4 md:mt-0 relative" ref={monthPickerRef}>
-          <div className="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-1">
+          <div className="flex items-center bg-white dark:bg-slate-700 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 p-1">
              <button 
                onClick={() => changeMonth(-1)}
-               className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-govblue transition-colors"
+               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-500 dark:text-gray-300 hover:text-govblue transition-colors"
                title="Mês Anterior"
              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -489,13 +544,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                     <span className={`text-lg font-bold ${themeText} select-none`}>
                     {selectedMonth}
                     </span>
-                    <span className="text-gray-400 text-xs font-normal select-none">{selectedYear}</span>
+                    <span className="text-gray-400 dark:text-gray-400 text-xs font-normal select-none">{selectedYear}</span>
                 </div>
              </div>
 
              <button 
                onClick={() => changeMonth(1)}
-               className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-govblue transition-colors"
+               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-500 dark:text-gray-300 hover:text-govblue transition-colors"
                title="Próximo Mês"
              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
@@ -504,14 +559,14 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
 
           {/* Grid Dropdown for Direct Selection */}
           {isMonthPickerOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50 animate-fade-in-up">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 p-4 z-50 animate-fade-in-up">
                   {/* Year Navigation inside Popover */}
-                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-50">
-                      <button onClick={() => setSelectedYear(prev => prev - 1)} className="p-1 hover:bg-gray-100 rounded text-gray-500">
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-50 dark:border-slate-700">
+                      <button onClick={() => setSelectedYear(prev => prev - 1)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-gray-300">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
                       </button>
-                      <span className="font-bold text-gray-800">{selectedYear}</span>
-                      <button onClick={() => setSelectedYear(prev => prev + 1)} className="p-1 hover:bg-gray-100 rounded text-gray-500">
+                      <span className="font-bold text-gray-800 dark:text-gray-100">{selectedYear}</span>
+                      <button onClick={() => setSelectedYear(prev => prev + 1)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-gray-300">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                       </button>
                   </div>
@@ -525,7 +580,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                               className={`py-2 px-1 text-sm rounded-lg font-medium transition-colors ${
                                   selectedMonth === m 
                                   ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white shadow-md` 
-                                  : 'text-gray-600 hover:bg-gray-50'
+                                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                               }`}
                           >
                               {m.substring(0, 3)}
@@ -537,7 +592,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                   <button 
                     onClick={goToToday}
                     className={`w-full py-2 text-xs font-bold uppercase rounded-lg border border-dashed transition-colors
-                        ${viewContext === 'PF' ? 'text-govgreen border-govgreen hover:bg-green-50' : 'text-govblue border-govblue hover:bg-blue-50'}
+                        ${viewContext === 'PF' ? 'text-govgreen border-govgreen hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-govblue border-govblue hover:bg-blue-50 dark:hover:bg-blue-900/20'}
                     `}
                   >
                     Ir para Hoje
@@ -553,7 +608,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
         <div className="lg:col-span-4 space-y-6">
           
            {/* Card Importação */}
-           <div className={`rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group ${viewContext === 'PF' ? 'bg-govgreen shadow-green-100' : 'bg-govblue shadow-blue-100'}`}>
+           <div className={`rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group ${viewContext === 'PF' ? 'bg-govgreen shadow-green-100 dark:shadow-none' : 'bg-govblue shadow-blue-100 dark:shadow-none'}`}>
             <h3 className="text-lg font-bold mb-2 relative z-10 font-display">
               Importar Extrato {viewContext}
             </h3>
@@ -572,7 +627,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              className={`w-full relative z-10 py-3 px-4 bg-white rounded-xl font-bold text-sm shadow-sm flex justify-center items-center gap-2 transition-colors ${themeText}`}
+              className={`w-full relative z-10 py-3 px-4 bg-white dark:bg-slate-800 rounded-xl font-bold text-sm shadow-sm flex justify-center items-center gap-2 transition-colors ${themeText} dark:text-white`}
             >
               {isImporting ? (
                 <>
@@ -588,16 +643,18 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
           
           {importStatus && (
               <div className={`p-4 rounded-xl text-sm border flex items-center gap-3 ${
-                  importStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : 'bg-red-50 text-red-800 border-red-100'
+                  importStatus.type === 'success' 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800' 
+                  : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-100 dark:border-red-800'
               }`}>
                   {importStatus.msg}
               </div>
           )}
 
           {/* Form Card */}
-          <div className={`bg-white rounded-3xl shadow-sm p-8 border-t-8 ${themeBorder}`}>
-            <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100">
-                <h3 className="text-xl font-display font-bold text-gray-800">
+          <div className={`bg-white dark:bg-slate-800 rounded-3xl shadow-sm p-8 border-t-8 ${themeBorder}`}>
+            <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100 dark:border-slate-700">
+                <h3 className="text-xl font-display font-bold text-gray-800 dark:text-white">
                     {editId ? 'Editar Lançamento' : 'Novo Lançamento'}
                 </h3>
                 {editId && (
@@ -608,67 +665,98 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             <form onSubmit={handleSaveTransaction} className="space-y-5">
               
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Descrição</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Descrição</label>
                 <input 
                   type="text" 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={viewContext === 'PF' ? "Ex: Aluguel, Supermercado" : "Ex: Cachê, Fornecedor"}
-                  className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white focus:${themeBorder} focus:ring-${themeColor}`}
+                  className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Valor (R$)</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Valor (R$)</label>
                 <input 
                   type="number" 
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0,00"
-                  className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white focus:${themeBorder} focus:ring-${themeColor}`}
+                  className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
                   required
                 />
               </div>
 
-               {/* Project Field */}
+               {/* Project Selection / Source Field */}
                <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">
-                    {viewContext === 'PJ' ? 'Projeto / Edital' : 'Fonte / Origem'}
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                    {viewContext === 'PJ' ? 'Vincular a Projeto' : 'Fonte / Origem'}
                 </label>
-                <input 
-                  type="text" 
-                  value={project}
-                  onChange={(e) => setProject(e.target.value)}
-                  placeholder={viewContext === 'PJ' ? "Ex: Lei Paulo Gustavo" : "Ex: Salário, Freelance"}
-                  className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white focus:${themeBorder} focus:ring-${themeColor}`}
-                />
+                
+                {viewContext === 'PJ' ? (
+                  <div className="space-y-2">
+                      <select
+                          value={project}
+                          onChange={(e) => {
+                              setProject(e.target.value);
+                              setBudgetLineId(''); // Reset budget line if project changes
+                          }}
+                          className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                      >
+                          <option value="">Despesa Geral / Administrativa</option>
+                          {projects.map(p => (
+                              <option key={p.id} value={p.name}>{p.name}</option>
+                          ))}
+                          <option value="custom">Outro (Digitar...)</option>
+                      </select>
+                      
+                      {project === 'custom' && (
+                          <input 
+                              type="text" 
+                              value={customProjectName}
+                              onChange={(e) => setCustomProjectName(e.target.value)}
+                              placeholder="Digite o nome do projeto/origem"
+                              className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                              autoFocus
+                          />
+                      )}
+                  </div>
+                ) : (
+                   <input 
+                      type="text" 
+                      value={project}
+                      onChange={(e) => setProject(e.target.value)}
+                      placeholder="Ex: Salário, Freelance, Pessoal"
+                      className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                   />
+                )}
               </div>
 
               {/* Only show Gov Accountability fields if PJ */}
               {viewContext === 'PJ' && (
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-3">
+                  <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-xl border border-gray-100 dark:border-slate-700 space-y-3">
                       <p className="text-[10px] font-bold text-gray-400 uppercase">Dados para Prestação de Contas</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-500 mb-1">CPF/CNPJ</label>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">CPF/CNPJ</label>
                             <input 
                             type="text" 
                             value={supplierDoc}
                             onChange={(e) => setSupplierDoc(e.target.value)}
                             placeholder="00.000..."
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
+                            className="w-full rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-bold text-gray-500 mb-1">Nº Doc</label>
+                            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">Nº Doc</label>
                             <input 
                             type="text" 
                             value={paymentDoc}
                             onChange={(e) => setPaymentDoc(e.target.value)}
                             placeholder="NF/Pix"
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue"
+                            className="w-full rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-govblue bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                             />
                         </div>
                       </div>
@@ -677,15 +765,15 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
 
               <div className="grid grid-cols-2 gap-4">
                  <div className="col-span-2">
-                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Tipo</label>
-                    <div className="flex rounded-xl bg-gray-100 p-1">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Tipo</label>
+                    <div className="flex rounded-xl bg-gray-100 dark:bg-slate-700 p-1">
                       <button
                         type="button"
                         onClick={() => setType('inflow')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                           type === 'inflow' 
-                            ? 'bg-white text-emerald-600 shadow-sm' 
-                            : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' 
+                            : 'text-gray-500 dark:text-gray-300 hover:text-gray-700'
                         }`}
                       >
                         Entrada
@@ -695,8 +783,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                         onClick={() => setType('outflow')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                           type === 'outflow' 
-                            ? 'bg-white text-red-500 shadow-sm' 
-                            : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white dark:bg-slate-800 text-red-500 dark:text-red-400 shadow-sm' 
+                            : 'text-gray-500 dark:text-gray-300 hover:text-gray-700'
                         }`}
                       >
                         Saída
@@ -705,8 +793,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                  </div>
                  <div className="col-span-2">
                     <div className="flex justify-between items-center mb-1">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide">Categoria</label>
-                        {!isAddingCategory && (
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && type === 'outflow' ? 'Item Orçamentário (Rubrica)' : 'Categoria'}
+                        </label>
+                        {!isAddingCategory && selectedProjectBudgetLines.length === 0 && (
                             <button 
                                 type="button" 
                                 onClick={() => setIsAddingCategory(true)}
@@ -724,27 +814,43 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
                                 placeholder="Nome da Categoria"
-                                className={`flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:${themeBorder} focus:ring-${themeColor}`}
+                                className={`flex-1 rounded-xl border border-gray-200 dark:border-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:${themeBorder} focus:ring-${themeColor} bg-white dark:bg-slate-900 text-gray-900 dark:text-white`}
                                 autoFocus
                             />
                             <button type="button" onClick={handleAddCustomCategory} className="bg-govgreen text-white px-3 py-2 rounded-lg text-xs font-bold">OK</button>
-                            <button type="button" onClick={() => setIsAddingCategory(false)} className="bg-gray-200 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold">X</button>
+                            <button type="button" onClick={() => setIsAddingCategory(false)} className="bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-gray-200 px-3 py-2 rounded-lg text-xs font-bold">X</button>
                         </div>
                     ) : (
-                        <select 
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white focus:${themeBorder} focus:ring-${themeColor}`}
-                        >
-                        {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        // Logic Swap: If PJ project selected AND it has budget lines AND is outflow, show Budget Selector
+                        viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && type === 'outflow' ? (
+                             <select 
+                                value={budgetLineId}
+                                onChange={(e) => handleBudgetLineSelect(e.target.value)}
+                                className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                            >
+                                <option value="">-- Selecione o item do orçamento --</option>
+                                {selectedProjectBudgetLines.map(line => (
+                                    <option key={line.id} value={line.id}>
+                                        {line.expenseItem} ({line.stage})
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <select 
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                            >
+                            {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        )
                     )}
 
                     {/* Description Tooltip */}
-                    {!isAddingCategory && category && CATEGORY_DESCRIPTIONS[category] && (
+                    {!isAddingCategory && category && CATEGORY_DESCRIPTIONS[category] && !budgetLineId && (
                         <div className="mt-2 px-1 flex items-start gap-2 animate-fade-in">
                             <svg className={`w-4 h-4 mt-0.5 flex-shrink-0 ${viewContext === 'PF' ? 'text-govgreen' : 'text-govblue'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <p className="text-xs text-gray-500 italic">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 italic">
                                 {CATEGORY_DESCRIPTIONS[category]}
                             </p>
                         </div>
@@ -754,15 +860,15 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
               
               {/* Recurring Option */}
               {!editId && (
-                  <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-900/50 p-3 rounded-xl border border-transparent dark:border-slate-700">
                       <input 
                           type="checkbox" 
                           id="recurring" 
                           checked={isRecurring} 
                           onChange={(e) => setIsRecurring(e.target.checked)}
-                          className={`w-5 h-5 rounded text-${themeColor} focus:ring-${themeColor} border-gray-300`}
+                          className={`w-5 h-5 rounded text-${themeColor} focus:ring-${themeColor} border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800`}
                       />
-                      <label htmlFor="recurring" className="text-sm text-gray-700 font-medium select-none cursor-pointer">
+                      <label htmlFor="recurring" className="text-sm text-gray-700 dark:text-gray-300 font-medium select-none cursor-pointer">
                           Repetir lançamento?
                       </label>
                       
@@ -770,7 +876,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                           <select 
                               value={recurrenceMonths}
                               onChange={(e) => setRecurrenceMonths(Number(e.target.value))}
-                              className="ml-auto text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white"
+                              className="ml-auto text-xs border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                           >
                               {[2,3,4,5,6,12].map(n => <option key={n} value={n}>{n} meses</option>)}
                           </select>
@@ -796,21 +902,21 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
           {/* Visual Summary Cards - Updated for Continuity */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              {/* Previous Balance */}
-             <div className="bg-gray-50 p-6 rounded-3xl shadow-sm border border-gray-200 flex flex-col justify-between h-32 relative overflow-hidden">
+             <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col justify-between h-32 relative overflow-hidden">
                <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Saldo Anterior</p>
-                    <p className="text-[10px] text-gray-400">Até final de {MONTHS[(MONTHS.indexOf(selectedMonth) - 1 + 12) % 12]}</p>
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Saldo Anterior</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Até final de {MONTHS[(MONTHS.indexOf(selectedMonth) - 1 + 12) % 12]}</p>
                </div>
-               <p className={`text-2xl font-display font-bold ${previousBalance >= 0 ? 'text-gray-700' : 'text-red-500'}`}>
+               <p className={`text-2xl font-display font-bold ${previousBalance >= 0 ? 'text-gray-700 dark:text-gray-200' : 'text-red-500'}`}>
                    {formatCurrency(previousBalance)}
                </p>
              </div>
              
              {/* Monthly Result */}
-             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between h-32 relative overflow-hidden">
+             <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col justify-between h-32 relative overflow-hidden">
                <div>
-                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Resultado Mês</p>
-                   <p className="text-[10px] text-gray-400">Entradas - Saídas ({selectedMonth})</p>
+                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Resultado Mês</p>
+                   <p className="text-[10px] text-gray-400 dark:text-gray-500">Entradas - Saídas ({selectedMonth})</p>
                </div>
                <div className="flex justify-between items-end">
                    <p className={`text-2xl font-display font-bold ${currentMonthResult >= 0 ? (viewContext === 'PF' ? 'text-govgreen' : 'text-govblue') : 'text-red-500'}`}>
@@ -825,13 +931,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
              
              {/* Final Accumulated Balance */}
              <div className={`p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-32 relative overflow-hidden transition-colors ${
-                 accumulatedBalance >= 0 ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white border-transparent` : 'bg-red-50 border-red-200'
+                 accumulatedBalance >= 0 ? `${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'} text-white border-transparent` : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
              }`}>
                <p className={`text-xs font-bold uppercase tracking-widest ${
-                   accumulatedBalance >= 0 ? 'text-white/80' : 'text-red-700'
+                   accumulatedBalance >= 0 ? 'text-white/80' : 'text-red-700 dark:text-red-300'
                }`}>Saldo Final (Acumulado)</p>
                <p className={`text-3xl font-display font-bold ${
-                   accumulatedBalance >= 0 ? 'text-white' : 'text-red-600'
+                   accumulatedBalance >= 0 ? 'text-white' : 'text-red-600 dark:text-red-400'
                }`}>
                  {formatCurrency(accumulatedBalance)}
                </p>
@@ -839,9 +945,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
           </div>
 
           {/* List Style */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
-            <div className={`px-8 py-6 border-b border-gray-100 flex justify-between items-center ${themeBgLight} bg-opacity-30 rounded-t-3xl flex-shrink-0`}>
-              <h3 className="text-lg font-display font-bold text-gray-800">Lançamentos: {viewContext}</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col h-[600px]">
+            <div className={`px-8 py-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center ${themeBgLight} ${themeBgDark} bg-opacity-30 rounded-t-3xl flex-shrink-0`}>
+              <h3 className="text-lg font-display font-bold text-gray-800 dark:text-white">Lançamentos: {viewContext}</h3>
               <p className="text-xs text-gray-400 font-normal">
                 {visibleTransactions.length} de {currentMonthTransactions.length} exibidos
               </p>
@@ -849,11 +955,11 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
             
             {sortedTransactions.length === 0 ? (
               <div className="flex-grow flex flex-col items-center justify-center p-12 text-center">
-                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                <div className="w-24 h-24 bg-gray-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-10 h-10 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                 </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-2">Sem movimentações em {selectedMonth}/{selectedYear}</h4>
-                <p className="text-gray-500 max-w-sm">Adicione receitas ou despesas para visualizar o fluxo deste mês.</p>
+                <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Sem movimentações em {selectedMonth}/{selectedYear}</h4>
+                <p className="text-gray-500 dark:text-gray-400 max-w-sm">Adicione receitas ou despesas para visualizar o fluxo deste mês.</p>
               </div>
             ) : (
               <div 
@@ -862,50 +968,53 @@ const ManualManager: React.FC<ManualManagerProps> = ({ transactions, setTransact
                 className="flex-grow overflow-y-auto"
               >
                 <table className="min-w-full text-left relative">
-                  <thead className="sticky top-0 bg-white shadow-sm z-10 border-b border-gray-100">
+                  <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm z-10 border-b border-gray-100 dark:border-slate-700">
                     <tr>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Dia</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Descrição</th>
-                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
-                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white">Valor</th>
-                      <th className="px-4 py-4 text-center bg-white"></th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Dia</th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
+                      <th className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{viewContext === 'PJ' ? 'Projeto' : 'Origem'}</th>
+                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Valor</th>
+                      <th className="px-4 py-4 text-center"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
                     {visibleTransactions.map((t) => (
                       <tr 
                         key={t.id} 
                         onClick={() => handleEditClick(t)}
-                        className={`cursor-pointer transition-colors group ${editId === t.id ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+                        className={`cursor-pointer transition-colors group ${editId === t.id ? 'bg-orange-50 dark:bg-orange-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-700'}`}
                       >
-                        <td className="px-8 py-5 text-sm font-medium text-gray-500">
+                        <td className="px-8 py-5 text-sm font-medium text-gray-500 dark:text-gray-400">
                            {t.date ? new Date(t.date).toLocaleDateString('pt-BR', {day: '2-digit'}) : '-'}
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-2">
-                             <div className="text-sm font-bold text-gray-800">{t.description}</div>
+                             <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{t.description}</div>
                              {t.isRecurring && (
-                                 <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded" title="Recorrente">↺</span>
+                                 <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 px-1.5 py-0.5 rounded" title="Recorrente">↺</span>
                              )}
                           </div>
-                           <div className="text-[10px] text-gray-400 mt-1">{t.category}</div>
+                           <div className="text-[10px] text-gray-400 mt-1">
+                               {t.category}
+                               {t.projectStage && <span className="ml-1 px-1 bg-gray-100 dark:bg-slate-600 rounded">({t.projectStage})</span>}
+                           </div>
                         </td>
                         <td className="px-8 py-5">
                           {t.project ? (
-                             <span className={`px-2 py-1 rounded text-[10px] font-bold border ${themeBgLight} ${themeText} ${themeBorder} border-opacity-30`}>
+                             <span className={`px-2 py-1 rounded text-[10px] font-bold border ${themeBgLight} dark:bg-slate-700 ${themeText} dark:text-gray-300 ${themeBorder} border-opacity-30 dark:border-slate-600`}>
                                 {t.project}
                              </span>
-                          ) : <span className="text-gray-300 text-xs">-</span>}
+                          ) : <span className="text-gray-300 dark:text-gray-600 text-xs">-</span>}
                         </td>
                         <td className={`px-8 py-5 text-right font-bold text-sm ${
-                          t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'
+                          t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
                         }`}>
                           {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                         </td>
                         <td className="px-4 py-5 text-center">
                           <button 
                             onClick={(e) => handleDelete(t.id, e)}
-                            className="p-2 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                            className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
                             title="Apagar"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

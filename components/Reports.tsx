@@ -124,30 +124,80 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+  // --- Custom Tooltips ---
+
+  const CustomEvolutionTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      // Get data from the original object to calculate net result on hover
+      const data = payload[0].payload; 
+      const saldo = data.Receita - data.Despesa;
+      
+      return (
+        <div className="bg-white dark:bg-slate-800 p-4 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl min-w-[180px] z-50">
+          <p className="font-bold text-gray-800 dark:text-white mb-2 border-b border-gray-100 dark:border-slate-700 pb-2">{label}</p>
+          <div className="space-y-1">
+             <div className="flex justify-between items-center text-xs">
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">Receita:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-200">{formatCurrency(data.Receita)}</span>
+             </div>
+             <div className="flex justify-between items-center text-xs">
+                <span className="text-red-500 dark:text-red-400 font-medium">Despesa:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-200">{formatCurrency(data.Despesa)}</span>
+             </div>
+             <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-1 flex justify-between items-center text-xs">
+                <span className="text-gray-500 dark:text-gray-400 font-bold uppercase">Saldo:</span>
+                <span className={`font-bold ${saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                    {formatCurrency(saldo)}
+                </span>
+             </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-slate-800 p-3 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl z-50">
+            <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill }}></div>
+                <p className="font-bold text-gray-800 dark:text-white text-xs">{payload[0].name}</p>
+            </div>
+            <p className="font-bold text-gray-700 dark:text-gray-200 text-sm pl-4">
+                {formatCurrency(payload[0].value)}
+            </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (transactions.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-96 text-center animate-fade-in-up">
-            <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4 text-primary">
+            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4 text-primary dark:text-purple-400">
                 <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Sem dados para relatórios</h2>
-            <p className="text-gray-500 mt-2">Adicione transações no seu Diário Financeiro para visualizar gráficos.</p>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sem dados para relatórios</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Adicione transações no seu Diário Financeiro para visualizar gráficos.</p>
         </div>
     )
   }
 
   return (
     <div className="animate-fade-in-up pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-purple-100 pb-6 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-purple-100 dark:border-slate-700 pb-6 gap-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-gray-900">Relatórios & Análise</h2>
-          <p className="text-gray-500 mt-1">Entenda para onde vai o dinheiro de cada projeto.</p>
+          <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white">Relatórios & Análise</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Entenda para onde vai o dinheiro de cada projeto.</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-purple-50 mb-8 flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wide mr-4">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-purple-50 dark:border-slate-700 mb-8 flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mr-4">
            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
            Filtros
         </div>
@@ -155,7 +205,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedEntity} 
           onChange={(e) => setSelectedEntity(e.target.value as 'all' | 'PF' | 'PJ')}
-          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary"
+          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
         >
           <option value="all">Pessoa Física & Jurídica</option>
           <option value="PF">Apenas Pessoa Física</option>
@@ -166,9 +216,9 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
           value={selectedType} 
           onChange={(e) => setSelectedType(e.target.value as 'all' | 'inflow' | 'outflow')}
           className={`px-4 py-2 rounded-lg border text-sm font-medium focus:ring-primary focus:border-primary ${
-              selectedType === 'inflow' ? 'bg-green-50 border-green-200 text-green-700' : 
-              selectedType === 'outflow' ? 'bg-red-50 border-red-200 text-red-700' :
-              'bg-gray-50 border-gray-200'
+              selectedType === 'inflow' ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300' : 
+              selectedType === 'outflow' ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300' :
+              'bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-800 dark:text-gray-200'
           }`}
         >
           <option value="all">Entradas e Saídas</option>
@@ -180,7 +230,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedYear} 
           onChange={(e) => setSelectedYear(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary"
+          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
         >
           <option value="all">Todos os Anos</option>
           {availableYears.map(year => (
@@ -192,7 +242,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedPeriod} 
           onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary min-w-[140px]"
+          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary min-w-[140px] text-gray-800 dark:text-gray-200"
         >
           <option value="all">Todo o Período</option>
           <optgroup label="Semestres">
@@ -215,7 +265,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedCategory} 
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary"
+          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
         >
           <option value="all">Todas as Categorias</option>
           {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -224,7 +274,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedProject} 
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm font-medium focus:ring-primary focus:border-primary"
+          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
         >
           <option value="all">Todos os Projetos</option>
           {availableProjects.map(p => <option key={p} value={p}>{p}</option>)}
@@ -233,17 +283,17 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className={`bg-emerald-50 p-6 rounded-2xl border border-emerald-100 transition-opacity ${selectedType === 'outflow' ? 'opacity-50' : 'opacity-100'}`}>
-           <p className="text-xs font-bold text-emerald-700 uppercase">Receita Total (Filtro)</p>
-           <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalInflow)}</p>
+        <div className={`bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800 transition-opacity ${selectedType === 'outflow' ? 'opacity-50' : 'opacity-100'}`}>
+           <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase">Receita Total (Filtro)</p>
+           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalInflow)}</p>
         </div>
-        <div className={`bg-red-50 p-6 rounded-2xl border border-red-100 transition-opacity ${selectedType === 'inflow' ? 'opacity-50' : 'opacity-100'}`}>
-           <p className="text-xs font-bold text-red-700 uppercase">Despesa Total (Filtro)</p>
-           <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalOutflow)}</p>
+        <div className={`bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl border border-red-100 dark:border-red-800 transition-opacity ${selectedType === 'inflow' ? 'opacity-50' : 'opacity-100'}`}>
+           <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase">Despesa Total (Filtro)</p>
+           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalOutflow)}</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-200">
-           <p className="text-xs font-bold text-gray-500 uppercase">Resultado Líquido</p>
-           <p className={`text-2xl font-bold mt-1 ${totalInflow - totalOutflow >= 0 ? 'text-primary' : 'text-red-500'}`}>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700">
+           <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Resultado Líquido</p>
+           <p className={`text-2xl font-bold mt-1 ${totalInflow - totalOutflow >= 0 ? 'text-primary dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>
                {formatCurrency(totalInflow - totalOutflow)}
            </p>
         </div>
@@ -251,18 +301,18 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
       {/* Accountability Report Mode (Activated when Project is selected) */}
       {selectedProject !== 'all' && (
-        <div className="mb-12 bg-white rounded-3xl shadow-sm border border-purple-200 overflow-hidden">
-            <div className="bg-purple-50 px-8 py-6 border-b border-purple-100 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mb-12 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-purple-200 dark:border-slate-600 overflow-hidden">
+            <div className="bg-purple-50 dark:bg-purple-900/20 px-8 py-6 border-b border-purple-100 dark:border-purple-900 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
-                    <h3 className="text-lg font-bold text-gray-900">Prestação de Contas: {selectedProject}</h3>
+                    <svg className="w-5 h-5 text-primary dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Prestação de Contas: {selectedProject}</h3>
                   </div>
-                  <p className="text-sm text-gray-600">Modelo formatado para Editais (Lei Paulo Gustavo / Aldir Blanc)</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Modelo formatado para Editais (Lei Paulo Gustavo / Aldir Blanc)</p>
                 </div>
                 <button 
                   onClick={() => window.print()}
-                  className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg shadow hover:bg-purple-800 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-primary dark:bg-purple-700 text-white text-sm font-bold rounded-lg shadow hover:bg-purple-800 transition-colors flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   Imprimir / PDF
@@ -271,33 +321,33 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
             <div className="overflow-x-auto p-4">
                 <table className="min-w-full text-sm text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50 border border-gray-200">
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700">Item</th>
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700">Data Pgto</th>
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700">Fornecedor / Descrição</th>
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700">Natureza da Despesa</th>
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700">Tipo Doc.</th>
-                            <th className="px-4 py-3 border border-gray-300 font-bold text-gray-700 text-right">Valor (R$)</th>
+                        <tr className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600">
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Item</th>
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Data Pgto</th>
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Fornecedor / Descrição</th>
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Natureza da Despesa</th>
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Tipo Doc.</th>
+                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200 text-right">Valor (R$)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredData.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((t, idx) => (
-                             <tr key={t.id} className="border border-gray-200 hover:bg-gray-50">
-                                <td className="px-4 py-2 border border-gray-300 text-gray-600 text-center">{idx + 1}</td>
-                                <td className="px-4 py-2 border border-gray-300 text-gray-800">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                                <td className="px-4 py-2 border border-gray-300 text-gray-800 font-medium">{t.description}</td>
-                                <td className="px-4 py-2 border border-gray-300 text-gray-600">{t.category}</td>
-                                <td className="px-4 py-2 border border-gray-300 text-gray-500 italic text-xs">Nota Fiscal/Recibo</td>
-                                <td className={`px-4 py-2 border border-gray-300 text-right font-bold ${t.type === 'inflow' ? 'text-black' : 'text-red-600'}`}>
+                             <tr key={t.id} className="border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700">
+                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 text-center">{idx + 1}</td>
+                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-800 dark:text-gray-200">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-800 dark:text-gray-200 font-medium">{t.description}</td>
+                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300">{t.category}</td>
+                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-400 italic text-xs">Nota Fiscal/Recibo</td>
+                                <td className={`px-4 py-2 border border-gray-300 dark:border-slate-600 text-right font-bold ${t.type === 'inflow' ? 'text-black dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {t.type === 'outflow' ? '-' : ''} {new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(t.amount)}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
-                    <tfoot className="bg-gray-100 font-bold">
+                    <tfoot className="bg-gray-100 dark:bg-slate-700 font-bold">
                         <tr>
-                            <td colSpan={5} className="px-4 py-3 border border-gray-300 text-right uppercase">Saldo do Projeto</td>
-                            <td className={`px-4 py-3 border border-gray-300 text-right ${totalInflow - totalOutflow < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                            <td colSpan={5} className="px-4 py-3 border border-gray-300 dark:border-slate-600 text-right uppercase text-gray-700 dark:text-gray-200">Saldo do Projeto</td>
+                            <td className={`px-4 py-3 border border-gray-300 dark:border-slate-600 text-right ${totalInflow - totalOutflow < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                                 {formatCurrency(totalInflow - totalOutflow)}
                             </td>
                         </tr>
@@ -310,8 +360,8 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Evolution Chart */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-purple-50">
-           <h3 className="text-lg font-bold text-gray-800 mb-6">Evolução Financeira</h3>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700">
+           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Evolução Financeira</h3>
            <div className="h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
                <AreaChart data={evolutionData}>
@@ -325,13 +375,10 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700" />
                   <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(val) => `R$${val/1000}k`} tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
+                  <Tooltip content={<CustomEvolutionTooltip />} />
                   <Legend />
                   <Area type="monotone" dataKey="Receita" stroke="#10b981" fillOpacity={1} fill="url(#colorReceita)" strokeWidth={3} />
                   <Area type="monotone" dataKey="Despesa" stroke="#ef4444" fillOpacity={1} fill="url(#colorDespesa)" strokeWidth={3} />
@@ -341,8 +388,8 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         </div>
 
         {/* Breakdown by Category */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-purple-50">
-           <h3 className="text-lg font-bold text-gray-800 mb-6">{pieChartTitle}</h3>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700">
+           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">{pieChartTitle}</h3>
            <div className="h-80 w-full flex">
              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -359,8 +406,8 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px', color: '#666'}}/>
+                    <Tooltip content={<CustomPieTooltip />} />
+                    <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px', color: '#94a3b8'}}/>
                 </PieChart>
              </ResponsiveContainer>
            </div>
@@ -369,11 +416,11 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       
       {/* Detail Table for Filtered Data (General View) */}
       {selectedProject === 'all' && (
-          <div className="mt-8 bg-white rounded-3xl shadow-sm border border-purple-50 p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Detalhamento de Lançamentos</h3>
+          <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700 p-6">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Detalhamento de Lançamentos</h3>
               <div className="overflow-x-auto">
                   <table className="min-w-full text-sm text-left">
-                      <thead className="text-xs text-gray-400 uppercase bg-gray-50 border-b border-gray-100">
+                      <thead className="text-xs text-gray-400 uppercase bg-gray-50 dark:bg-slate-700 border-b border-gray-100 dark:border-slate-600">
                           <tr>
                               <th className="px-6 py-3">Data</th>
                               <th className="px-6 py-3">Descrição</th>
@@ -383,19 +430,19 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                               <th className="px-6 py-3 text-right">Valor</th>
                           </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
                           {filteredData.map(t => (
-                              <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50">
-                                  <td className="px-6 py-3 text-gray-500">{new Date(t.date).toLocaleDateString()}</td>
-                                  <td className="px-6 py-3 font-medium text-gray-900">{t.description}</td>
+                              <tr key={t.id} className="border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
+                                  <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{new Date(t.date).toLocaleDateString()}</td>
+                                  <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">{t.description}</td>
                                   <td className="px-6 py-3">
-                                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${t.entity === 'PF' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${t.entity === 'PF' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}`}>
                                           {t.entity}
                                       </span>
                                   </td>
-                                  <td className="px-6 py-3 text-gray-600 text-xs">{t.category}</td>
-                                  <td className="px-6 py-3 text-primary">{t.project || '-'}</td>
-                                  <td className={`px-6 py-3 text-right font-bold ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                  <td className="px-6 py-3 text-gray-600 dark:text-gray-400 text-xs">{t.category}</td>
+                                  <td className="px-6 py-3 text-primary dark:text-blue-400">{t.project || '-'}</td>
+                                  <td className={`px-6 py-3 text-right font-bold ${t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                                       {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                                   </td>
                               </tr>

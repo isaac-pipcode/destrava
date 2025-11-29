@@ -1,185 +1,738 @@
+
 import React, { useState, useMemo } from 'react';
-import { Transaction } from '../types';
+import { Transaction, ProjectMetadata, BudgetLineItem, ProjectStage, ExpenseNature } from '../types';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 
 interface AccountabilityProps {
   transactions: Transaction[];
+  projects: ProjectMetadata[];
+  onRegisterProject: (project: ProjectMetadata) => void;
 }
 
-const Accountability: React.FC<AccountabilityProps> = ({ transactions }) => {
-  const [selectedProject, setSelectedProject] = useState<string>('');
-  const [legislation, setLegislation] = useState('LPG'); // LPG (Paulo Gustavo) or PNAB (Aldir Blanc)
+const COLORS = ['#1351b4', '#009a44', '#f37021', '#475569', '#94a3b8', '#e2e8f0'];
+
+const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onRegisterProject }) => {
+  // Navigation & Selection State
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'report' | 'guide'>('dashboard');
+  const [viewMode, setViewMode] = useState<'select' | 'register' | 'import'>('select');
   
+  // Register Form State
+  const [newProject, setNewProject] = useState<Partial<ProjectMetadata>>({ legislation: 'LPG', budget: 0 });
+  const [budgetLines, setBudgetLines] = useState<BudgetLineItem[]>([]);
+  
+  // Budget Line Input State
+  const [lineActivity, setLineActivity] = useState('');
+  const [lineItem, setLineItem] = useState('');
+  const [lineStage, setLineStage] = useState<ProjectStage>('Produção');
+  const [lineNature, setLineNature] = useState<ExpenseNature>('Serviço (PF/PJ)');
+  const [lineValue, setLineValue] = useState('');
+
+  // Import State
+  const [importTerm, setImportTerm] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Filters for Report Tab
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStage, setFilterStage] = useState('all');
+
+  // --- Logic & Calculations ---
+
+  // Merge Registered Projects with Projects found in Transactions (legacy/manual entries)
   const availableProjects = useMemo(() => {
-      const projects = Array.from(new Set(transactions.map(t => t.project).filter(Boolean)));
-      return projects.sort();
-  }, [transactions]);
+      const transactionProjects = Array.from(new Set(transactions.map(t => t.project).filter(Boolean))) as string[];
+      const unifiedList: ProjectMetadata[] = [...projects];
 
-  const filteredData = useMemo(() => {
-    if (!selectedProject) return [];
-    return transactions.filter(t => t.project === selectedProject).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [transactions, selectedProject]);
+      transactionProjects.forEach(tName => {
+          if (!unifiedList.find(p => p.name === tName)) {
+              unifiedList.push({
+                  id: tName,
+                  name: tName,
+                  legislation: 'Outros',
+                  budget: 0,
+                  startDate: new Date().toISOString(),
+                  origin: 'manual'
+              });
+          }
+      });
+      return unifiedList;
+  }, [transactions, projects]);
 
-  const totalInflow = filteredData.reduce((acc, t) => t.type === 'inflow' ? acc + t.amount : acc, 0);
-  const totalOutflow = filteredData.reduce((acc, t) => t.type === 'outflow' ? acc + t.amount : acc, 0);
+  const activeProjectData = useMemo(() => {
+      return availableProjects.find(p => p.id === selectedProjectId || p.name === selectedProjectId);
+  }, [availableProjects, selectedProjectId]);
+
+  const projectTransactions = useMemo(() => {
+    if (!activeProjectData) return [];
+    return transactions
+      .filter(t => t.project === activeProjectData.name)
+      .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [transactions, activeProjectData]);
+
+  // KPIs
+  const totalBudget = activeProjectData ? activeProjectData.budget : 0;
+  const totalExecuted = projectTransactions.reduce((acc, t) => t.type === 'outflow' ? acc + t.amount : acc, 0);
+  const totalInflowRealized = projectTransactions.reduce((acc, t) => t.type === 'inflow' ? acc + t.amount : acc, 0);
+  const balance = totalInflowRealized - totalExecuted;
+  const budgetExecutionPercentage = totalBudget > 0 ? (totalExecuted / totalBudget) * 100 : 0;
+
+  // Chart Data: Breakdown by STAGE (Etapa)
+  const stageData = useMemo(() => {
+    const grouped: Record<string, number> = {};
+    projectTransactions.filter(t => t.type === 'outflow').forEach(t => {
+      const stage = t.projectStage || 'Não Classificado';
+      grouped[stage] = (grouped[stage] || 0) + t.amount;
+    });
+    return Object.entries(grouped)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [projectTransactions]);
+
+  // Chart Data: Timeline
+  const timelineData = useMemo(() => {
+      const grouped: Record<string, number> = {};
+      projectTransactions.filter(t => t.type === 'outflow').forEach(t => {
+          const date = new Date(t.date);
+          const key = `${date.toLocaleString('pt-BR', { month: 'short' })}/${date.getFullYear().toString().substr(2)}`;
+          grouped[key] = (grouped[key] || 0) + t.amount;
+      });
+      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [projectTransactions]);
+
+  // Report Filter Logic
+  const filteredReportData = useMemo(() => {
+      return projectTransactions.filter(t => {
+          const matchesSearch = 
+            t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            (t.supplierDoc && t.supplierDoc.includes(searchTerm)) ||
+            (t.category.toLowerCase().includes(searchTerm.toLowerCase()));
+          
+          const matchesStage = filterStage === 'all' || (t.projectStage === filterStage);
+          
+          return matchesSearch && matchesStage;
+      });
+  }, [projectTransactions, searchTerm, filterStage]);
+
+  // --- Actions ---
+
+  const handleAddBudgetLine = () => {
+      if(!lineActivity || !lineItem || !lineValue) return;
+      const newLine: BudgetLineItem = {
+          id: crypto.randomUUID(),
+          activity: lineActivity,
+          expenseItem: lineItem,
+          stage: lineStage,
+          nature: lineNature,
+          plannedAmount: parseFloat(lineValue)
+      };
+      setBudgetLines([...budgetLines, newLine]);
+      setLineItem('');
+      setLineValue('');
+      // Keep Activity/Stage/Nature as they are often repetitive
+  };
+
+  const removeBudgetLine = (id: string) => {
+      setBudgetLines(budgetLines.filter(l => l.id !== id));
+  };
+
+  const handleRegisterProject = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newProject.name) return;
+
+      // Sum budget from lines if lines exist, otherwise use manual total
+      const calculatedBudget = budgetLines.length > 0 
+          ? budgetLines.reduce((acc, curr) => acc + curr.plannedAmount, 0)
+          : (newProject.budget || 0);
+
+      const project: ProjectMetadata = {
+          id: crypto.randomUUID(),
+          name: newProject.name,
+          legislation: newProject.legislation || 'Outros',
+          budget: calculatedBudget,
+          startDate: newProject.startDate || new Date().toISOString(),
+          origin: 'manual',
+          budgetLines: budgetLines
+      };
+
+      onRegisterProject(project);
+      setSelectedProjectId(project.id);
+      setViewMode('select');
+      setNewProject({ legislation: 'LPG', budget: 0 });
+      setBudgetLines([]);
+  };
+
+  const handleImportMapaCultural = () => {
+      if (!importTerm) return;
+      setIsImporting(true);
+
+      setTimeout(() => {
+          const mockProject: ProjectMetadata = {
+              id: crypto.randomUUID(),
+              name: "Festival de Arte Integrada (Importado)",
+              legislation: "PNAB",
+              budget: 75000.00,
+              startDate: "2024-03-01",
+              origin: 'mapa_cultural',
+              mapaCulturalId: importTerm,
+              budgetLines: [
+                  { id: '1', activity: 'Pré-produção', expenseItem: 'Curadoria', stage: 'Pré-Produção', nature: 'Cachê', plannedAmount: 5000 },
+                  { id: '2', activity: 'Produção', expenseItem: 'Equipamento de Som', stage: 'Produção', nature: 'Bens Duráveis/Equipamentos', plannedAmount: 20000 },
+              ]
+          };
+
+          onRegisterProject(mockProject);
+          setSelectedProjectId(mockProject.id);
+          setIsImporting(false);
+          setImportTerm('');
+          setViewMode('select');
+      }, 2000);
+  };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   const exportToCSV = () => {
-    if (filteredData.length === 0) return;
+    if (projectTransactions.length === 0) return;
 
-    // Standardized columns for accountability based on Gov requirements
     const headers = [
-        'Item', 
-        'Data', 
-        'Descrição da Despesa', 
-        'Favorecido (Fornecedor)',
-        'CNPJ/CPF Fornecedor', 
-        'Natureza da Despesa (Rubrica)', 
-        'Nº Documento Fiscal',
-        'Nº Pix/Cheque',
-        'Valor', 
-        'Tipo (E/S)'
+        'Etapa', 'Atividade/Ação', 'Item de Despesa', 'Natureza', 'Favorecido', 'CNPJ/CPF', 'Data', 'Valor'
     ];
     
-    const rows = filteredData.map((t, idx) => [
-        idx + 1,
-        new Date(t.date).toLocaleDateString('pt-BR'),
-        `"${t.description}"`, // Quote to handle commas
-        `"${t.description}"`, // Often description matches Payee in simple view, or add dedicated Payee field
-        `"${t.supplierDoc || ''}"`,
-        `"${t.category}"`,
-        "Nota Fiscal/Recibo",
-        `"${t.paymentDoc || ''}"`,
-        t.amount.toFixed(2).replace('.', ','),
-        t.type === 'inflow' ? 'Entrada' : 'Saída'
-    ]);
+    // Find Budget Line Info for each transaction if available
+    const rows = projectTransactions.map((t) => {
+        // Find metadata if budgetLineId exists in active project
+        const lineMeta = activeProjectData?.budgetLines?.find(b => b.id === t.budgetLineId);
+        
+        return [
+            `"${lineMeta?.stage || t.projectStage || ''}"`,
+            `"${lineMeta?.activity || ''}"`,
+            `"${t.category}"`, // Category acts as the Item Description
+            `"${lineMeta?.nature || t.projectNature || ''}"`,
+            `"${t.description}"`,
+            `"${t.supplierDoc || ''}"`,
+            new Date(t.date).toLocaleDateString('pt-BR'),
+            t.amount.toFixed(2).replace('.', ',')
+        ];
+    });
 
-    const csvContent = [
-        headers.join(';'),
-        ...rows.map(row => row.join(';'))
-    ].join('\n');
-
+    const csvContent = [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Prestacao_Contas_${legislation}_${selectedProject.replace(/\s+/g, '_')}.csv`);
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `Prestacao_LPG_${activeProjectData?.name || 'Projeto'}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const CustomTooltip = ({ active, payload }: any) => {
+      if (active && payload && payload.length) {
+        return (
+          <div className="bg-white dark:bg-slate-800 p-3 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl z-50">
+              <p className="font-bold text-gray-800 dark:text-white text-xs mb-1">{payload[0].name}</p>
+              <p className="font-bold text-govblue dark:text-blue-400 text-sm">
+                  {formatCurrency(payload[0].value)}
+              </p>
+          </div>
+        );
+      }
+      return null;
+  };
+
   return (
     <div className="animate-fade-in-up pb-12">
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 border-l-8 border-govblue">
-         <h2 className="text-3xl font-display font-bold text-gray-800 mb-2">Prestação de Contas (Transferegov)</h2>
-         <p className="text-gray-500 mb-8 max-w-2xl">
-            Ferramenta de conformidade para a Lei Paulo Gustavo e Política Nacional Aldir Blanc.
-            Gera relatórios padronizados com os campos exigidos pelos editais.
-         </p>
-
-         <div className="flex flex-col md:flex-row items-end gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-200">
-            <div className="w-full md:w-1/3">
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Legislação / Edital</label>
-                <select 
-                    value={legislation}
-                    onChange={(e) => setLegislation(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-govblue focus:ring-1 focus:ring-govblue bg-white font-bold text-govblue"
-                >
-                    <option value="LPG">Lei Paulo Gustavo (LC 195/2022)</option>
-                    <option value="PNAB">Política Nac. Aldir Blanc (Lei 14.399/2022)</option>
-                    <option value="Estadual">ProAC / Funcultura / Outros</option>
-                </select>
-            </div>
-
-            <div className="w-full md:w-1/3">
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Selecione o Projeto</label>
-                <select 
-                    value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-govblue focus:ring-1 focus:ring-govblue bg-white"
-                >
-                    <option value="">-- Selecione --</option>
-                    {availableProjects.map(p => <option key={p} value={p as string}>{p}</option>)}
-                </select>
+      
+      {/* Header & Project Selection */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 mb-6 border-l-8 border-govblue">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div>
+                <h2 className="text-3xl font-display font-bold text-gray-800 dark:text-white mb-2">Gestor Cultural</h2>
+                <p className="text-gray-500 dark:text-gray-400 max-w-2xl">
+                    Prestação de Contas Simplificada para Editais (LPG, Aldir Blanc, ProAC).
+                </p>
             </div>
             
-            {selectedProject && (
-                <button 
-                    onClick={exportToCSV}
-                    className="px-6 py-3 bg-govgreen text-white font-bold rounded-xl shadow hover:bg-green-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
+            <div className="w-full md:w-64">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Projeto Ativo</label>
+                <select 
+                    value={selectedProjectId}
+                    onChange={(e) => {
+                        setSelectedProjectId(e.target.value);
+                        if(e.target.value === '') setViewMode('select');
+                    }}
+                    className="w-full rounded-xl border border-gray-200 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-200 font-bold focus:ring-govblue"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Exportar Relatório Oficial
-                </button>
-            )}
+                    <option value="">-- Selecione ou Cadastre --</option>
+                    {availableProjects.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                </select>
+            </div>
          </div>
       </div>
 
-      {selectedProject ? (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-govblue text-white px-8 py-6 flex justify-between items-center">
-               <div>
-                 <h3 className="font-bold text-lg">Extrato de Execução Financeira</h3>
-                 <p className="text-xs opacity-80">Referência: {selectedProject} | {legislation}</p>
-               </div>
-               <div className="text-right">
-                   <p className="text-xs opacity-80 uppercase">Saldo Remanescente</p>
-                   <span className={`font-bold text-2xl ${totalInflow - totalOutflow >= 0 ? 'text-white' : 'text-orange-300'}`}>{formatCurrency(totalInflow - totalOutflow)}</span>
-               </div>
+      {!activeProjectData ? (
+          /* EMPTY STATE / ONBOARDING */
+          <div className="animate-fade-in">
+              {viewMode === 'select' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mt-10">
+                      {/* Card Register */}
+                      <button 
+                          onClick={() => setViewMode('register')}
+                          className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border-2 border-transparent hover:border-govblue dark:hover:border-blue-500 hover:shadow-lg transition-all group text-left relative overflow-hidden"
+                      >
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                          <div className="w-16 h-16 bg-blue-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-6 text-govblue dark:text-blue-400 relative z-10">
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 relative z-10">Cadastrar Projeto</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 relative z-10">
+                              Cadastro detalhado do orçamento aprovado para controle de rubricas da Lei Paulo Gustavo.
+                          </p>
+                      </button>
+
+                      {/* Card Import */}
+                      <button 
+                          onClick={() => setViewMode('import')}
+                          className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border-2 border-transparent hover:border-govorange dark:hover:border-orange-500 hover:shadow-lg transition-all group text-left relative overflow-hidden"
+                      >
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 dark:bg-orange-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                          <div className="w-16 h-16 bg-orange-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-6 text-govorange dark:text-orange-400 relative z-10">
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 relative z-10">Importar do Mapa Cultural</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 relative z-10">
+                              Meu projeto já está cadastrado na plataforma oficial. Quero puxar os dados via integração.
+                          </p>
+                      </button>
+                  </div>
+              )}
+
+              {/* REGISTER FORM WITH BUDGET BUILDER */}
+              {viewMode === 'register' && (
+                  <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 mt-6">
+                      <div className="flex items-center gap-3 mb-6">
+                          <button onClick={() => setViewMode('select')} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
+                             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                          </button>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Novo Projeto Cultural</h3>
+                      </div>
+                      
+                      <form onSubmit={handleRegisterProject} className="space-y-6">
+                          {/* Basic Info */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="md:col-span-2">
+                                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nome do Projeto</label>
+                                  <input 
+                                      type="text" 
+                                      required
+                                      placeholder="Ex: Curta-metragem O Sol do Sertão"
+                                      value={newProject.name || ''}
+                                      onChange={e => setNewProject({...newProject, name: e.target.value})}
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                  />
+                              </div>
+                              <div>
+                                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Edital / Lei</label>
+                                  <select 
+                                      value={newProject.legislation}
+                                      onChange={e => setNewProject({...newProject, legislation: e.target.value})}
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                  >
+                                      <option value="LPG">Lei Paulo Gustavo</option>
+                                      <option value="PNAB">Aldir Blanc (PNAB)</option>
+                                      <option value="ProAC">ProAC</option>
+                                      <option value="Outros">Outros</option>
+                                  </select>
+                              </div>
+                              <div>
+                                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Início da Vigência</label>
+                                  <input 
+                                      type="date" 
+                                      required
+                                      value={newProject.startDate ? newProject.startDate.substring(0, 10) : ''}
+                                      onChange={e => setNewProject({...newProject, startDate: e.target.value})}
+                                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                  />
+                              </div>
+                          </div>
+
+                          {/* Budget Builder Section */}
+                          <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
+                              <h4 className="font-bold text-lg text-gray-800 dark:text-white mb-2">Planejamento Orçamentário (Planilha de Aplicação)</h4>
+                              <p className="text-sm text-gray-500 mb-4">Adicione as rubricas conforme aprovado no projeto.</p>
+                              
+                              <div className="bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-200 dark:border-slate-600 mb-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                                      <div className="md:col-span-3">
+                                          <label className="text-xs font-bold text-gray-500 uppercase">Atividade / Ação</label>
+                                          <input type="text" placeholder="Ex: Filmagem" value={lineActivity} onChange={e => setLineActivity(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                      </div>
+                                      <div className="md:col-span-3">
+                                          <label className="text-xs font-bold text-gray-500 uppercase">Item de Despesa</label>
+                                          <input type="text" placeholder="Ex: Operador de Câmera" value={lineItem} onChange={e => setLineItem(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <label className="text-xs font-bold text-gray-500 uppercase">Etapa</label>
+                                          <select value={lineStage} onChange={e => setLineStage(e.target.value as ProjectStage)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                                              <option>Pré-Produção</option>
+                                              <option>Produção</option>
+                                              <option>Pós-Produção</option>
+                                              <option>Administrativo/Gestão</option>
+                                              <option>Outros</option>
+                                          </select>
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <label className="text-xs font-bold text-gray-500 uppercase">Natureza</label>
+                                          <select value={lineNature} onChange={e => setLineNature(e.target.value as ExpenseNature)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                                              <option>Cachê</option>
+                                              <option>Serviço (PF/PJ)</option>
+                                              <option>Material de Consumo</option>
+                                              <option>Bens Duráveis/Equipamentos</option>
+                                              <option>Logística/Transporte</option>
+                                          </select>
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <label className="text-xs font-bold text-gray-500 uppercase">Valor (R$)</label>
+                                          <input type="number" placeholder="0.00" value={lineValue} onChange={e => setLineValue(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                      </div>
+                                  </div>
+                                  <button type="button" onClick={handleAddBudgetLine} className="w-full py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 transition-colors">
+                                      + Adicionar Rubrica
+                                  </button>
+                              </div>
+
+                              {/* Budget Lines List */}
+                              {budgetLines.length > 0 && (
+                                  <div className="mb-6 overflow-x-auto">
+                                      <table className="w-full text-sm text-left">
+                                          <thead className="bg-gray-100 dark:bg-slate-700 text-xs uppercase text-gray-500">
+                                              <tr>
+                                                  <th className="px-3 py-2">Etapa</th>
+                                                  <th className="px-3 py-2">Item</th>
+                                                  <th className="px-3 py-2 text-right">Valor</th>
+                                                  <th className="px-3 py-2"></th>
+                                              </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                              {budgetLines.map(line => (
+                                                  <tr key={line.id}>
+                                                      <td className="px-3 py-2 dark:text-gray-300">{line.stage}</td>
+                                                      <td className="px-3 py-2 font-medium dark:text-white">{line.expenseItem} <span className="text-xs text-gray-400">({line.nature})</span></td>
+                                                      <td className="px-3 py-2 text-right dark:text-gray-300">{formatCurrency(line.plannedAmount)}</td>
+                                                      <td className="px-3 py-2 text-right">
+                                                          <button type="button" onClick={() => removeBudgetLine(line.id)} className="text-red-400 hover:text-red-600">×</button>
+                                                      </td>
+                                                  </tr>
+                                              ))}
+                                              <tr className="bg-gray-50 dark:bg-slate-800 font-bold">
+                                                  <td colSpan={2} className="px-3 py-2 text-right">TOTAL DO ORÇAMENTO:</td>
+                                                  <td className="px-3 py-2 text-right text-govblue dark:text-blue-400">
+                                                      {formatCurrency(budgetLines.reduce((acc, curr) => acc + curr.plannedAmount, 0))}
+                                                  </td>
+                                                  <td></td>
+                                              </tr>
+                                          </tbody>
+                                      </table>
+                                  </div>
+                              )}
+                          </div>
+
+                          <button type="submit" className="w-full py-4 bg-govblue hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors">
+                              Salvar Projeto e Orçamento
+                          </button>
+                      </form>
+                  </div>
+              )}
+              
+              {/* IMPORT MODE (Simple placeholder as before) */}
+               {viewMode === 'import' && (
+                  <div className="max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 mt-6 text-center">
+                       <div className="flex justify-start mb-4">
+                            <button onClick={() => setViewMode('select')} className="text-sm text-gray-500 hover:text-govblue flex items-center gap-1">← Voltar</button>
+                       </div>
+                       
+                       <div className="w-16 h-16 bg-orange-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-govorange">
+                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                       </div>
+                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Conectar com Mapa Cultural</h3>
+                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                           Insira o ID do projeto ou o link público para buscarmos as informações oficiais.
+                       </p>
+
+                       <div className="relative mb-4">
+                           <input 
+                                type="text"
+                                placeholder="Ex: ID 20394 ou https://mapacultural..."
+                                value={importTerm}
+                                onChange={e => setImportTerm(e.target.value)}
+                                disabled={isImporting}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govorange outline-none"
+                           />
+                           {isImporting && (
+                               <div className="absolute right-3 top-3">
+                                   <svg className="animate-spin h-6 w-6 text-govorange" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                               </div>
+                           )}
+                       </div>
+
+                       <button 
+                            onClick={handleImportMapaCultural}
+                            disabled={isImporting || !importTerm}
+                            className="w-full py-3 bg-govorange hover:bg-orange-600 disabled:opacity-50 text-white font-bold rounded-xl transition-colors"
+                       >
+                           {isImporting ? 'Buscando dados...' : 'Importar Projeto'}
+                       </button>
+                  </div>
+              )}
+          </div>
+      ) : (
+        <>
+            {/* DASHBOARD CONTENT (When project is selected) */}
+            
+            {/* Project Header Info */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 mb-6">
+                <div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">{activeProjectData.name}</h3>
+                    <div className="flex gap-2 mt-1">
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                            {activeProjectData.legislation}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                            Orçamento: {formatCurrency(activeProjectData.budget)}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div className="overflow-x-auto p-0">
-                <table className="min-w-full text-sm text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-tight text-gray-500">
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold text-center w-12">#</th>
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold w-24">Data</th>
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold">Descrição / Fornecedor</th>
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold">CNPJ/CPF</th>
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold">Rubrica (Natureza)</th>
-                            <th className="px-4 py-4 border-r border-gray-100 font-bold">Doc. Fiscal</th>
-                            <th className="px-4 py-4 font-bold text-right">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredData.length > 0 ? filteredData.map((t, idx) => (
-                             <tr key={t.id} className="hover:bg-blue-50/10">
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-400 text-center font-mono text-xs">{idx + 1}</td>
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-600">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-800 font-bold">{t.description}</td>
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-500 text-xs font-mono">{t.supplierDoc || '-'}</td>
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-600">
-                                    <span className="bg-gray-100 px-2 py-1 rounded text-xs">{t.category}</span>
-                                </td>
-                                <td className="px-4 py-3 border-r border-gray-100 text-gray-500 text-xs">
-                                    {t.paymentDoc ? `Doc: ${t.paymentDoc}` : 'N/A'}
-                                </td>
-                                <td className={`px-4 py-3 text-right font-bold ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                    {t.type === 'outflow' ? '-' : ''} {new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(t.amount)}
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan={7} className="px-4 py-12 text-center text-gray-400 italic">
-                                    Nenhum lançamento encontrado para este projeto.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+            {/* Tabs Navigation */}
+            <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-slate-700 p-1 rounded-xl w-fit mx-4 sm:mx-0">
+                <button 
+                    onClick={() => setActiveTab('dashboard')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-white dark:bg-slate-600 shadow text-govblue dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                >
+                    📊 Visão Geral
+                </button>
+                <button 
+                    onClick={() => setActiveTab('report')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-600 shadow text-govblue dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                >
+                    📑 Extrato LPG
+                </button>
+                <button 
+                    onClick={() => setActiveTab('guide')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'guide' ? 'bg-white dark:bg-slate-600 shadow text-govblue dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
+                >
+                    💡 Guia de Bolso
+                </button>
             </div>
-            <div className="bg-gray-50 px-8 py-4 text-xs text-gray-500 border-t border-gray-100 text-center">
-                Documento gerado eletronicamente pelo sistema Mapa da Gestão - Sujeito a conferência documental física.
-            </div>
-        </div>
-      ) : (
-          <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
-              <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 text-govblue border border-gray-100">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
-              </div>
-              <p className="text-gray-500 font-medium">Selecione o projeto acima para carregar a tabela de conciliação.</p>
-          </div>
+
+            {/* TAB: DASHBOARD */}
+            {activeTab === 'dashboard' && (
+                <div className="animate-fade-in">
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        {/* Budget Card */}
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-l-4 border-govblue relative group">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Orçamento Aprovado</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{formatCurrency(totalBudget)}</p>
+                            <div className="flex justify-between items-center mt-2 text-xs">
+                                <span className="text-gray-400">Recebido em conta:</span>
+                                <span className={`font-bold ${totalInflowRealized < totalBudget ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                    {formatCurrency(totalInflowRealized)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-l-4 border-govorange">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Executado</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{formatCurrency(totalExecuted)}</p>
+                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-1.5 mt-2">
+                                <div className="bg-govorange h-1.5 rounded-full" style={{ width: `${Math.min(budgetExecutionPercentage, 100)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">{budgetExecutionPercentage.toFixed(1)}% do orçamento</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-l-4 border-govgreen">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Saldo em Conta</p>
+                            <p className={`text-2xl font-bold mt-1 ${balance < 0 ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>{formatCurrency(balance)}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                                {balance >= 0 ? 'Em conformidade' : 'Atenção: Conta negativa'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Stage Breakdown */}
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Execução por Etapa</h3>
+                            <div className="h-64 w-full">
+                                {stageData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={stageData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {stageData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip content={<CustomTooltip />} />
+                                            <Legend verticalAlign="bottom" height={36}/>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem despesas lançadas.</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Bar Chart */}
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Linha do Tempo</h3>
+                            <div className="h-64 w-full">
+                                {timelineData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={timelineData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                                            <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
+                                            <YAxis tickFormatter={(val) => `${val/1000}k`} tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
+                                            <RechartsTooltip content={<CustomTooltip />} cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                                            <Bar dataKey="value" fill="#475569" radius={[4, 4, 0, 0]} barSize={40} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">Sem movimentação.</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB: REPORT */}
+            {activeTab === 'report' && (
+                <div className="animate-fade-in bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row gap-4 justify-between bg-gray-50 dark:bg-slate-900/50">
+                        <div className="flex gap-4 flex-1">
+                            <input 
+                                type="text" 
+                                placeholder="Buscar fornecedor, item..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full sm:w-64 px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-1 focus:ring-govblue focus:outline-none dark:text-white"
+                            />
+                            <select 
+                                value={filterStage}
+                                onChange={(e) => setFilterStage(e.target.value)}
+                                className="hidden sm:block px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-1 focus:ring-govblue focus:outline-none dark:text-white"
+                            >
+                                <option value="all">Todas Etapas</option>
+                                <option value="Pré-Produção">Pré-Produção</option>
+                                <option value="Produção">Produção</option>
+                                <option value="Pós-Produção">Pós-Produção</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-2">
+                             <button 
+                                onClick={() => window.print()}
+                                className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600"
+                             >
+                                🖨️ Imprimir
+                             </button>
+                             <button 
+                                onClick={exportToCSV}
+                                className="px-3 py-2 bg-govgreen text-white rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm"
+                             >
+                                📥 CSV Oficial
+                             </button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm text-left">
+                            <thead>
+                                <tr className="bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 uppercase text-xs font-bold tracking-wider">
+                                    <th className="px-4 py-4">Etapa</th>
+                                    <th className="px-4 py-4">Atividade / Item</th>
+                                    <th className="px-4 py-4">Natureza</th>
+                                    <th className="px-4 py-4">Favorecido / Desc.</th>
+                                    <th className="px-4 py-4 text-right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                {filteredReportData.map((t) => {
+                                    // Try to match budget line meta
+                                    const budgetLine = activeProjectData.budgetLines?.find(b => b.id === t.budgetLineId);
+                                    
+                                    return (
+                                        <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                            <td className="px-4 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap text-xs">
+                                                <span className="bg-gray-200 dark:bg-slate-600 px-2 py-1 rounded">
+                                                    {budgetLine?.stage || t.projectStage || 'Geral'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <p className="font-bold text-gray-800 dark:text-white text-xs">{budgetLine?.activity}</p>
+                                                <p className="text-sm font-medium text-govblue dark:text-blue-300">{t.category}</p>
+                                            </td>
+                                            <td className="px-4 py-4 text-gray-500 dark:text-gray-400 text-xs">
+                                                {budgetLine?.nature || t.projectNature || '-'}
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <p className="text-gray-800 dark:text-gray-200 text-xs font-bold">{t.description}</p>
+                                                <p className="text-[10px] text-gray-400 font-mono">{t.supplierDoc}</p>
+                                            </td>
+                                            <td className={`px-4 py-4 text-right font-bold font-mono ${t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                {t.type === 'outflow' ? '-' : '+'} {formatCurrency(t.amount)}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB: GUIDE (Unchanged) */}
+            {activeTab === 'guide' && (
+                <div className="animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-l-4 border-yellow-400">
+                        <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                           <span>🛒</span> Aquisição de Bens
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                           Ao comprar equipamentos permanentes (câmeras, computadores), verifique se o edital exige doação à administração pública ao final do projeto.
+                           <br/><br/>
+                           <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded text-xs font-bold">Dica:</span> Guarde manual, garantia e nota fiscal original.
+                        </p>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-l-4 border-blue-400">
+                        <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                           <span>💳</span> Tarifas Bancárias
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                           Contas de fomento cultural (LPG/PNAB) geralmente são isentas de tarifas ("Cesta de Serviços"). Se houver cobrança, solicite estorno ao banco ou justifique como despesa administrativa (se o edital permitir).
+                        </p>
+                    </div>
+                </div>
+            )}
+        </>
       )}
     </div>
   );

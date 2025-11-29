@@ -89,11 +89,11 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
 
       {/* Cards de Saúde Financeira Separados */}
       <div className="flex justify-between items-end mb-4 px-2">
-        <h3 className="text-xl font-bold text-gray-800">Visão Geral dos Saldos</h3>
+        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Visão Geral dos Saldos</h3>
         {transactions.length === 0 && (
             <button 
             onClick={loadDemoData}
-            className="text-sm font-bold text-govblue hover:text-govorange underline transition-colors"
+            className="text-sm font-bold text-govblue dark:text-blue-400 hover:text-govorange underline transition-colors"
             >
             Carregar dados de exemplo (Demo)
             </button>
@@ -103,25 +103,25 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         
         {/* Card PJ - AZUL */}
-        <div className="bg-blue-50/30 rounded-2xl shadow-sm p-6 border-l-8 border-govblue relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-blue-50/30 dark:bg-slate-800 rounded-2xl shadow-sm p-6 border-l-8 border-govblue relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-sm font-bold text-govblue uppercase tracking-widest">Pessoa Jurídica (MEI/ME)</h3>
-                    <p className="text-xs text-gray-500">Projetos, Editais e Notas Fiscais</p>
+                    <h3 className="text-sm font-bold text-govblue dark:text-blue-400 uppercase tracking-widest">Pessoa Jurídica (MEI/ME)</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Projetos, Editais e Notas Fiscais</p>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 bg-white border-blue-200 text-govblue`}>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 bg-white dark:bg-slate-700 border-blue-200 dark:border-slate-600 text-govblue dark:text-blue-400`}>
                     <span>{statusPJ.icon}</span> <span>{statusPJ.label}</span>
                 </div>
             </div>
             
-            <div className="mb-6 bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
-                <p className="text-3xl font-display font-bold text-gray-800">{formatCurrency(healthPJ.balance)}</p>
-                <p className="text-sm text-gray-500">Saldo em Caixa</p>
+            <div className="mb-6 bg-white dark:bg-slate-900 p-4 rounded-xl border border-blue-100 dark:border-slate-700 shadow-sm">
+                <p className="text-3xl font-display font-bold text-gray-800 dark:text-white">{formatCurrency(healthPJ.balance)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Saldo em Caixa</p>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border border-blue-100">
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-blue-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1 group relative">
-                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1 cursor-help">
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center gap-1 cursor-help">
                         Fôlego Financeiro (Runway)
                         <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </span>
@@ -131,41 +131,41 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
                         <p>Saldo Atual ÷ Média de Gastos Mensais</p>
                         <p className="mt-1 text-gray-300">Indica quantos meses a empresa sobrevive sem novos contratos.</p>
                     </div>
-                    <span className="text-xs font-bold text-govblue">{healthPJ.runway.toFixed(1)} meses</span>
+                    <span className="text-xs font-bold text-govblue dark:text-blue-400">{healthPJ.runway.toFixed(1)} meses</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                     <div 
                         className={`h-2 rounded-full transition-all duration-1000 ${healthPJ.runway < 3 ? 'bg-govorange' : 'bg-govblue'}`} 
                         style={{ width: `${Math.min(healthPJ.runway * 10, 100)}%` }}
                     ></div>
                 </div>
-                <p className="text-[10px] text-gray-500">Média de custos fixos: {formatCurrency(healthPJ.avgMonthlyExpenses)}/mês</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Média de custos fixos: {formatCurrency(healthPJ.avgMonthlyExpenses)}/mês</p>
             </div>
             <div className="mt-4 text-center">
-                 <button onClick={() => onNavigate('manual_pj')} className="text-sm font-bold text-govblue hover:underline">Ir para Diário PJ &rarr;</button>
+                 <button onClick={() => onNavigate('manual_pj')} className="text-sm font-bold text-govblue dark:text-blue-400 hover:underline">Ir para Diário PJ &rarr;</button>
             </div>
         </div>
 
         {/* Card PF - VERDE */}
-        <div className="bg-green-50/30 rounded-2xl shadow-sm p-6 border-l-8 border-govgreen relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-green-50/30 dark:bg-slate-800 rounded-2xl shadow-sm p-6 border-l-8 border-govgreen relative overflow-hidden group hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-sm font-bold text-govgreen uppercase tracking-widest">Pessoa Física</h3>
-                    <p className="text-xs text-gray-500">Gastos pessoais e Patrimônio</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Gastos pessoais e Patrimônio</p>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 bg-white border-green-200 text-govgreen`}>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 bg-white dark:bg-slate-700 border-green-200 dark:border-slate-600 text-govgreen`}>
                     <span>{statusPF.icon}</span> <span>{statusPF.label}</span>
                 </div>
             </div>
             
-            <div className="mb-6 bg-white p-4 rounded-xl border border-green-100 shadow-sm">
-                <p className="text-3xl font-display font-bold text-gray-800">{formatCurrency(healthPF.balance)}</p>
-                <p className="text-sm text-gray-500">Saldo Disponível</p>
+            <div className="mb-6 bg-white dark:bg-slate-900 p-4 rounded-xl border border-green-100 dark:border-slate-700 shadow-sm">
+                <p className="text-3xl font-display font-bold text-gray-800 dark:text-white">{formatCurrency(healthPF.balance)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Saldo Disponível</p>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border border-green-100">
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-green-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1 group relative">
-                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1 cursor-help">
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center gap-1 cursor-help">
                         Reserva Pessoal
                         <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </span>
@@ -176,13 +176,13 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
                     </div>
                     <span className="text-xs font-bold text-govgreen">{healthPF.runway.toFixed(1)} meses</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                     <div 
                         className={`h-2 rounded-full transition-all duration-1000 ${healthPF.runway < 3 ? 'bg-govorange' : 'bg-govgreen'}`} 
                         style={{ width: `${Math.min(healthPF.runway * 10, 100)}%` }}
                     ></div>
                 </div>
-                <p className="text-[10px] text-gray-500">Custo de vida médio: {formatCurrency(healthPF.avgMonthlyExpenses)}/mês</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Custo de vida médio: {formatCurrency(healthPF.avgMonthlyExpenses)}/mês</p>
             </div>
             <div className="mt-4 text-center">
                  <button onClick={() => onNavigate('manual_pf')} className="text-sm font-bold text-govgreen hover:underline">Ir para Diário PF &rarr;</button>
@@ -191,27 +191,27 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
       </div>
       
       {/* Quick Actions Grid */}
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Acesso Rápido</h3>
+      <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Acesso Rápido</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-         <button onClick={() => onNavigate('manual_pj')} className="p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-govblue transition-all text-left group">
-            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-govblue group-hover:text-white transition-colors text-govblue">
+         <button onClick={() => onNavigate('manual_pj')} className="p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:shadow-md hover:border-govblue dark:hover:border-blue-500 transition-all text-left group">
+            <div className="w-10 h-10 bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-govblue group-hover:text-white transition-colors text-govblue dark:text-blue-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 text-sm">Lançar PJ</p>
+            <p className="font-bold text-gray-700 dark:text-gray-200 text-sm">Lançar PJ</p>
          </button>
 
-         <button onClick={() => onNavigate('accountability')} className="p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-govgreen transition-all text-left group">
-            <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-govgreen group-hover:text-white transition-colors text-govgreen">
+         <button onClick={() => onNavigate('accountability')} className="p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:shadow-md hover:border-govgreen dark:hover:border-green-500 transition-all text-left group">
+            <div className="w-10 h-10 bg-green-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-govgreen group-hover:text-white transition-colors text-govgreen dark:text-green-500">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 text-sm">Prestação de Contas</p>
+            <p className="font-bold text-gray-700 dark:text-gray-200 text-sm">Prestação de Contas</p>
          </button>
 
-         <button onClick={() => onNavigate('import')} className="p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-govorange transition-all text-left group">
-            <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-govorange group-hover:text-white transition-colors text-govorange">
+         <button onClick={() => onNavigate('import')} className="p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:shadow-md hover:border-govorange transition-all text-left group">
+            <div className="w-10 h-10 bg-orange-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-govorange group-hover:text-white transition-colors text-govorange">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 text-sm">Análise IA</p>
+            <p className="font-bold text-gray-700 dark:text-gray-200 text-sm">Análise IA</p>
          </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import DashboardHome from './components/DashboardHome';
 import ManualManager from './components/ManualManager';
@@ -6,19 +6,49 @@ import ImportFlow from './components/ImportFlow'; // Serves as AI Diagnosis
 import Accountability from './components/Accountability';
 import Reports from './components/Reports';
 import Login from './components/Login';
-import { Transaction } from './types';
+import { Transaction, ProjectMetadata } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Centralized state for transactions
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
+  // Centralized state for Projects (Accountability)
+  const [projects, setProjects] = useState<ProjectMetadata[]>([]);
+  
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Check local storage or system preference on load
+    const savedTheme = localStorage.getItem('theme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDarkMode(true);
+    }
+  };
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -47,6 +77,7 @@ const App: React.FC = () => {
             viewContext="PF"
             customCategories={customCategories}
             onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
+            projects={projects} // PF doesn't strictly need projects, but good to have
           />
         );
       case 'manual_pj':
@@ -57,12 +88,19 @@ const App: React.FC = () => {
             viewContext="PJ"
             customCategories={customCategories}
             onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
+            projects={projects}
           />
         );
       case 'reports':
         return <Reports transactions={transactions} />;
       case 'accountability':
-        return <Accountability transactions={transactions} />;
+        return (
+          <Accountability 
+            transactions={transactions} 
+            projects={projects}
+            onRegisterProject={(newProject) => setProjects(prev => [...prev, newProject])}
+          />
+        );
       case 'import':
         return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
       default:
@@ -77,15 +115,17 @@ const App: React.FC = () => {
   };
 
   if (!isLoggedIn) {
-      return <Login onLogin={handleLogin} />;
+      return <Login onLogin={handleLogin} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-gray-900 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
       <Header 
         currentView={currentView} 
         onNavigate={setCurrentView} 
         onLogout={handleLogout}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderView()}

@@ -62,7 +62,7 @@ TOTAL DAS SAÍDAS,"R$ 47.878,60","R$ 50.325,60","R$ 7.617,98","R$ 19.337,00","R$
     <div className="w-full max-w-2xl mx-auto p-4">
       <div 
         className={`relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-          ${dragActive ? 'border-accent bg-blue-50' : 'border-gray-300 bg-white hover:bg-gray-50'}
+          ${dragActive ? 'border-accent bg-blue-50 dark:bg-blue-900/30' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700'}
         `}
         onDragEnter={handleDrag} 
         onDragLeave={handleDrag} 
@@ -71,8 +71,8 @@ TOTAL DAS SAÍDAS,"R$ 47.878,60","R$ 50.325,60","R$ 7.617,98","R$ 19.337,00","R$
       >
         <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
           <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-          <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Clique para enviar</span> ou arraste o arquivo CSV</p>
-          <p className="text-xs text-gray-500">Suporta .CSV ou .TXT (Estrutura Fluxo de Caixa)</p>
+          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Clique para enviar</span> ou arraste o arquivo CSV</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Suporta .CSV ou .TXT (Estrutura Fluxo de Caixa)</p>
         </div>
         <input type="file" className="absolute w-full h-full opacity-0 cursor-pointer" onChange={handleChange} accept=".csv,.txt" />
       </div>
@@ -90,7 +90,7 @@ TOTAL DAS SAÍDAS,"R$ 47.878,60","R$ 50.325,60","R$ 7.617,98","R$ 19.337,00","R$
       {isLoading && (
         <div className="mt-6 flex flex-col items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mb-2"></div>
-            <p className="text-sm text-gray-600 animate-pulse">A IA está analisando seus dados financeiros...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 animate-pulse">A IA está analisando seus dados financeiros...</p>
         </div>
       )}
     </div>
