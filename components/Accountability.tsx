@@ -25,6 +25,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
   // We add 'id' to partial to track if we are editing an existing project
   const [newProject, setNewProject] = useState<Partial<ProjectMetadata>>({ legislation: 'LPG', budget: 0 });
   const [budgetLines, setBudgetLines] = useState<BudgetLineItem[]>([]);
+  const [projectFormError, setProjectFormError] = useState('');
   
   // Budget Line Input State
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -136,6 +137,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
     });
     
     setBudgetLines(activeProjectData.budgetLines || []);
+    setProjectFormError('');
     setViewMode('register');
   };
 
@@ -202,7 +204,21 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
 
   const handleSaveProjectInternal = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!newProject.name) return;
+      setProjectFormError('');
+
+      if (!newProject.name) {
+          setProjectFormError('O nome do projeto é obrigatório.');
+          return;
+      }
+
+      // Validate CPF/CNPJ
+      if (newProject.proponentDoc) {
+          const cleanDoc = newProject.proponentDoc.replace(/\D/g, '');
+          if (cleanDoc.length !== 11 && cleanDoc.length !== 14) {
+              setProjectFormError('CPF (11 dígitos) ou CNPJ (14 dígitos) incompleto ou inválido.');
+              return;
+          }
+      }
 
       // Sum budget from lines if lines exist, otherwise use manual total
       const calculatedBudget = budgetLines.length > 0 
@@ -227,6 +243,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
       setNewProject({ legislation: 'LPG', budget: 0, proponentDoc: '' });
       setBudgetLines([]);
       setLineError('');
+      setProjectFormError('');
       setEditingLineId(null);
   };
 
@@ -347,7 +364,10 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mt-10">
                       {/* Card Register */}
                       <button 
-                          onClick={() => setViewMode('register')}
+                          onClick={() => {
+                              setViewMode('register');
+                              setProjectFormError('');
+                          }}
                           className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border-2 border-transparent hover:border-govblue dark:hover:border-blue-500 hover:shadow-lg transition-all group text-left relative overflow-hidden"
                       >
                           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
@@ -385,6 +405,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                               setViewMode('select');
                               setNewProject({ legislation: 'LPG', budget: 0, proponentDoc: '' });
                               setBudgetLines([]);
+                              setProjectFormError('');
                               setEditingLineId(null);
                           }} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -404,7 +425,10 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                       required
                                       placeholder="Ex: Curta-metragem O Sol do Sertão"
                                       value={newProject.name || ''}
-                                      onChange={e => setNewProject({...newProject, name: e.target.value})}
+                                      onChange={e => {
+                                          setNewProject({...newProject, name: e.target.value});
+                                          setProjectFormError('');
+                                      }}
                                       className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
                                   />
                               </div>
@@ -443,7 +467,10 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                       required
                                       placeholder="00.000.000/0000-00"
                                       value={newProject.proponentDoc || ''}
-                                      onChange={e => setNewProject({...newProject, proponentDoc: maskCpfCnpj(e.target.value)})}
+                                      onChange={e => {
+                                          setNewProject({...newProject, proponentDoc: maskCpfCnpj(e.target.value)});
+                                          setProjectFormError('');
+                                      }}
                                       maxLength={18}
                                       className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
                                   />
@@ -566,6 +593,13 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                   </div>
                               )}
                           </div>
+                          
+                          {projectFormError && (
+                              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 animate-pulse">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                  {projectFormError}
+                              </div>
+                          )}
 
                           <button type="submit" className="w-full py-4 bg-govblue hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors">
                               {newProject.id ? 'Salvar Alterações do Projeto' : 'Salvar Novo Projeto'}
