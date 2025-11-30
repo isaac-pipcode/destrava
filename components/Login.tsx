@@ -55,24 +55,22 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
       <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border-t-8 border-govblue z-10 relative">
         <div className="p-8">
           
-          {/* Logo Abstraction */}
-          <div className="flex justify-center mb-6">
-             <div className="flex flex-col gap-1 transform scale-125">
-                <div className="flex gap-1">
-                    <div className="w-6 h-6 bg-govblue rounded-tl-lg"></div>
-                    <div className="w-6 h-6 bg-govgreen rounded-tr-lg"></div>
-                </div>
-                <div className="flex gap-1">
-                    <div className="w-6 h-6 bg-govorange rounded-bl-lg"></div>
-                    <div className="w-6 h-6 bg-govblue rounded-br-lg"></div>
-                </div>
+          {/* Logo DESTRAVA Large */}
+          <div className="flex justify-center mb-8">
+             <div className="relative w-16 h-16 flex items-center justify-center transform scale-110">
+                    {/* Lock Body */}
+                    <div className="absolute bottom-0 w-16 h-10 bg-govblue rounded-xl shadow-md z-10"></div>
+                    {/* Lock Shackle (Open) */}
+                    <div className="absolute -top-2 right-0 w-10 h-12 border-8 border-govgreen rounded-t-full transform translate-x-2 -translate-y-2"></div>
+                    {/* Keyhole */}
+                    <div className="absolute bottom-3 w-4 h-4 bg-govorange rounded-full z-20"></div>
             </div>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">MAPA DA GESTÃO</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Inteligência financeira para a Cultura.
+            <h1 className="text-4xl font-black text-gray-800 dark:text-white tracking-tighter">DESTRAVA</h1>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
+              Gestão inteligente para os trabalhadores da cultura
             </p>
           </div>
 

@@ -41,19 +41,19 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                className="flex items-center gap-3 cursor-pointer group"
                onClick={() => onNavigate('dashboard')}
              >
-                {/* Logo Abstract Representation similar to Mapa da Cultura */}
-                <div className="flex flex-col gap-0.5">
-                    <div className="flex gap-0.5">
-                        <div className="w-4 h-4 bg-govblue rounded-tl-lg"></div>
-                        <div className="w-4 h-4 bg-govgreen rounded-tr-lg"></div>
-                    </div>
-                    <div className="flex gap-0.5">
-                        <div className="w-4 h-4 bg-govorange rounded-bl-lg"></div>
-                        <div className="w-4 h-4 bg-govblue rounded-br-lg"></div>
-                    </div>
+                {/* Logo DESTRAVA (Open Lock Concept) */}
+                <div className="relative w-8 h-8 flex items-center justify-center">
+                    {/* Lock Body */}
+                    <div className="absolute bottom-0 w-8 h-5 bg-govblue rounded-md shadow-sm z-10"></div>
+                    {/* Lock Shackle (Open) */}
+                    <div className="absolute -top-1 right-0 w-5 h-6 border-4 border-govgreen rounded-t-full transform translate-x-1 -translate-y-1"></div>
+                    {/* Keyhole */}
+                    <div className="absolute bottom-1.5 w-2 h-2 bg-govorange rounded-full z-20"></div>
                 </div>
-                <div className="flex flex-col">
-                    <h1 className="text-xl font-extrabold text-gray-800 dark:text-white tracking-tight leading-none">MAPA DA<br/>GESTÃO</h1>
+
+                <div className="flex items-start gap-1">
+                    <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tighter leading-none">DESTRAVA</h1>
+                    <span className="bg-blue-100 text-govblue border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase self-start mt-1">Beta</span>
                 </div>
              </div>
 
