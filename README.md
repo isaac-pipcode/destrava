@@ -2,19 +2,52 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Destrava Cultura
 
-This contains everything you need to run your app locally.
+Sistema de gestão financeira para artistas e produtores culturais brasileiros, com análise inteligente via Gemini AI.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1CoFZw8k22fKm2xe-ZCEJ8_ypsgBa8JGN
+## 🚀 Deploy no Vercel
 
-## Run Locally
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/isaac-pipcode/destrava-cultura)
 
-**Prerequisites:**  Node.js
+**Domínio:** [destrava-cultura.vercel.app](https://destrava-cultura.vercel.app)
 
+### Configuração Rápida no Vercel
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. **Adicione a variável de ambiente:**
+   - Vá em Settings → Environment Variables
+   - Nome: `GEMINI_API_KEY`
+   - Valor: `AIzaSyCAKVEkHjiYtWogRdNBEa2qvC5gn3X7b2I`
+
+2. **Configure o domínio:**
+   - Vá em Settings → Domains
+   - Adicione: `destrava-cultura.vercel.app`
+
+📖 **Guia completo:** [VERCEL_SETUP.md](VERCEL_SETUP.md)
+
+## 💻 Executar Localmente
+
+**Pré-requisitos:** Node.js
+
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+2. Configure a chave da API Gemini:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Edite `.env.local` e adicione sua chave:
+   ```
+   GEMINI_API_KEY=sua_chave_aqui
+   ```
+
+3. Execute o projeto:
+   ```bash
+   npm run dev
+   ```
+
+## 🔑 Obter Chave da API Gemini
+
+Obtenha sua chave gratuita em: https://aistudio.google.com/app/apikey
