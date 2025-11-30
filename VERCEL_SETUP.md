@@ -14,6 +14,11 @@ A chave da API Gemini precisa ser configurada no Vercel:
    - **Value:** `AIzaSyCAKVEkHjiYtWogRdNBEa2qvC5gn3X7b2I`
    - **Environments:** Marque `Production`, `Preview` e `Development`
 4. Clique em **Save**
+5. **⚠️ IMPORTANTE:** Faça um **Redeploy** do projeto:
+   - Vá em **Deployments**
+   - Clique nos 3 pontos (...) do último deployment
+   - Selecione **Redeploy**
+   - **Nota:** Variáveis de ambiente só entram em vigor após o redeploy!
 
 **Via Vercel CLI:**
 ```bash
@@ -61,9 +66,13 @@ Após o deploy:
 
 ### A API Gemini não está funcionando
 
-1. Verifique se a variável `GEMINI_API_KEY` está configurada corretamente
-2. Verifique nos logs do Vercel se há erros relacionados à API
-3. Teste a chave da API em: https://aistudio.google.com/app/apikey
+1. ⚠️ **PRIMEIRO:** Certifique-se de fazer **Redeploy** após adicionar a variável
+2. Verifique se a variável `GEMINI_API_KEY` está configurada corretamente
+3. Verifique nos logs do Vercel se há erros relacionados à API
+4. Abra o console do navegador (F12) e procure por mensagens `[Gemini]`
+5. Teste a chave da API em: https://aistudio.google.com/app/apikey
+
+📖 **Guia completo de troubleshooting:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ### O domínio não está funcionando
 

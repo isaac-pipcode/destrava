@@ -17,15 +17,17 @@ const getAI = (): GoogleGenAI => {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey || apiKey.trim() === '' || apiKey.includes('undefined')) {
-        console.warn("API Key is missing or invalid.");
+        console.error("[Gemini] API Key is missing or invalid. Value:", apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined');
         throw new Error("A Chave de API (GEMINI_API_KEY) não está configurada neste ambiente. Configure-a no arquivo .env.local ou variáveis de ambiente do Vercel.");
     }
 
     try {
+        console.log("[Gemini] Initializing GoogleGenAI with API key:", apiKey.substring(0, 10) + "...");
         aiInstance = new GoogleGenAI({ apiKey: apiKey });
+        console.log("[Gemini] GoogleGenAI initialized successfully");
         return aiInstance;
     } catch (e) {
-        console.error("Failed to initialize GoogleGenAI", e);
+        console.error("[Gemini] Failed to initialize GoogleGenAI:", e);
         throw new Error("Falha ao inicializar o serviço de IA. Verifique sua chave.");
     }
 };
@@ -184,6 +186,7 @@ export const parseBankStatement = async (textContent: string): Promise<Omit<Tran
  */
 export const generateFinancialInsights = async (data: FinancialMonth[]): Promise<FinancialInsight[]> => {
     try {
+        console.log("[Gemini] Generating financial insights for", data.length, "months");
         const ai = getAI(); // Lazy load here
 
         const dataSummary = JSON.stringify(data.map(m => ({
@@ -199,12 +202,12 @@ export const generateFinancialInsights = async (data: FinancialMonth[]): Promise
             Analyze this monthly cash flow summary: ${dataSummary}
 
             Provide 3 insights/tips. Tone: Encouraging, professional but accessible, strictly focused on Brazilian cultural market reality.
-            
+
             Mandatory Checks:
             1. 'MEI Trap': If revenue is high, warn about the MEI limit (R$ 81k/year).
             2. Taxes: Remind them to pay the DAS (approx R$ 70,00) every month to avoid debt.
             3. 'Intermittency' (Sazonalidade): If they had a good month, advise saving for the 'dry months' (entressafra) between grants.
-            
+
             Language: Portuguese (Brazil).
         `;
 
@@ -222,6 +225,7 @@ export const generateFinancialInsights = async (data: FinancialMonth[]): Promise
             }
         };
 
+        console.log("[Gemini] Calling generateContent with model:", INSIGHT_MODEL);
         const response = await ai.models.generateContent({
             model: INSIGHT_MODEL,
             contents: prompt,
@@ -231,15 +235,36 @@ export const generateFinancialInsights = async (data: FinancialMonth[]): Promise
             }
         });
 
-        if (!response.text) return [];
-        return JSON.parse(response.text) as FinancialInsight[];
+        console.log("[Gemini] Response received, parsing...");
+        if (!response.text) {
+            console.warn("[Gemini] Response has no text");
+            return [];
+        }
 
-    } catch (error) {
-        console.error("Error generating insights:", error);
-        // Do not throw here, just return empty to not break the dashboard
+        const insights = JSON.parse(response.text) as FinancialInsight[];
+        console.log("[Gemini] Successfully generated", insights.length, "insights");
+        return insights;
+
+    } catch (error: any) {
+        console.error("[Gemini] Error generating insights:");
+        console.error("[Gemini] Error name:", error?.name);
+        console.error("[Gemini] Error message:", error?.message);
+        console.error("[Gemini] Full error:", error);
+
+        // Provide more specific error message
+        let errorDetail = "Verifique a configuração da chave de API.";
+        if (error?.message?.includes("API_KEY") || error?.message?.includes("GEMINI_API_KEY")) {
+            errorDetail = "A chave de API não está configurada. Configure GEMINI_API_KEY no Vercel.";
+        } else if (error?.message?.includes("quota") || error?.message?.includes("limit")) {
+            errorDetail = "Limite de uso da API atingido. Verifique sua quota no Google AI Studio.";
+        } else if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
+            errorDetail = "Erro de conexão com a API Gemini. Verifique sua conexão.";
+        }
+
+        // Do not throw here, just return descriptive error to not break the dashboard
         return [{
             title: "Análise Indisponível",
-            description: "No momento não consigo gerar insights sobre sua carreira. Verifique a configuração da chave de API.",
+            description: `No momento não consigo gerar insights. ${errorDetail}`,
             type: "info"
         }];
     }
