@@ -14,11 +14,11 @@ const getAI = (): GoogleGenAI => {
     if (aiInstance) return aiInstance;
 
     // Access the env var injected by Vite
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey || apiKey.trim() === '' || apiKey.includes('undefined')) {
         console.warn("API Key is missing or invalid.");
-        throw new Error("A Chave de API (API_KEY) não está configurada neste ambiente. Configure-a no Vercel ou .env.");
+        throw new Error("A Chave de API (GEMINI_API_KEY) não está configurada neste ambiente. Configure-a no arquivo .env.local ou variáveis de ambiente do Vercel.");
     }
 
     try {

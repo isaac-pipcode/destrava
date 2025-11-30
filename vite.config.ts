@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       // Use empty string fallback to prevent 'undefined' injection which might break some parsers
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || '')
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || '')
     }
   }
 })
