@@ -11,7 +11,9 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDarkMode, toggleTheme }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const getLinkClass = (isActive: boolean) => {
     return isActive
@@ -19,11 +21,14 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
       : "text-gray-700 dark:text-gray-300 hover:text-govblue dark:hover:text-white hover:bg-blue-50 dark:hover:bg-slate-800 px-4 py-2.5 rounded-lg font-medium text-sm transition-all";
   };
 
-  // Close user menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -34,26 +39,26 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
 
   return (
     <header className="bg-white dark:bg-slate-800 border-b-4 border-govgreen sticky top-0 z-50 shadow-sm transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex items-center gap-8">
-             <div 
-               className="flex items-center gap-3 cursor-pointer group"
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        <div className="flex justify-between items-center h-16 md:h-20">
+          <div className="flex items-center gap-4 md:gap-8">
+             <div
+               className="flex items-center gap-2 md:gap-3 cursor-pointer group"
                onClick={() => onNavigate('dashboard')}
              >
                 {/* Logo DESTRAVA (Open Lock Concept) */}
-                <div className="relative w-8 h-8 flex items-center justify-center">
+                <div className="relative w-7 h-7 md:w-8 md:h-8 flex items-center justify-center flex-shrink-0">
                     {/* Lock Body */}
-                    <div className="absolute bottom-0 w-8 h-5 bg-govblue rounded-md shadow-sm z-10"></div>
+                    <div className="absolute bottom-0 w-7 h-4 md:w-8 md:h-5 bg-govblue rounded-md shadow-sm z-10"></div>
                     {/* Lock Shackle (Open) */}
-                    <div className="absolute -top-1 right-0 w-5 h-6 border-4 border-govgreen rounded-t-full transform translate-x-1 -translate-y-1"></div>
+                    <div className="absolute -top-1 right-0 w-4 h-5 md:w-5 md:h-6 border-3 md:border-4 border-govgreen rounded-t-full transform translate-x-1 -translate-y-1"></div>
                     {/* Keyhole */}
-                    <div className="absolute bottom-1.5 w-2 h-2 bg-govorange rounded-full z-20"></div>
+                    <div className="absolute bottom-1 md:bottom-1.5 w-1.5 h-1.5 md:w-2 md:h-2 bg-govorange rounded-full z-20"></div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none">DESTRAVA</h1>
-                    <span className="bg-blue-100 text-govblue border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Beta</span>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none">DESTRAVA</h1>
+                    <span className="bg-blue-100 text-govblue border border-blue-200 text-[8px] md:text-[9px] font-bold px-1 md:px-1.5 py-0.5 rounded uppercase">Beta</span>
                 </div>
              </div>
 
@@ -123,16 +128,29 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
              </nav>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
              <div className="hidden lg:block text-right">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-tight">Apoio à Gestão</p>
                 <p className="text-xs font-semibold text-govblue dark:text-blue-400">Trabalhadores da Cultura</p>
              </div>
-             
+
+             {/* Mobile Menu Button */}
+             <button
+               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+               className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+               aria-label="Menu"
+             >
+               {isMobileMenuOpen ? (
+                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+               ) : (
+                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+               )}
+             </button>
+
              {/* Theme Toggle */}
-             <button 
+             <button
                onClick={toggleTheme}
-               className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+               className="p-1.5 md:p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors"
                title="Alternar Tema"
              >
                 {isDarkMode ? (
@@ -142,9 +160,9 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                 )}
              </button>
 
-             {/* User Profile / Logout Menu */}
-             <div className="relative" ref={userMenuRef}>
-                <button 
+             {/* User Profile / Logout Menu - Hidden on Mobile (shown in mobile menu) */}
+             <div className="hidden md:block relative" ref={userMenuRef}>
+                <button
                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                    className="h-10 w-10 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold border border-gray-200 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-govblue"
                 >
@@ -169,6 +187,110 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
              </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div
+            ref={mobileMenuRef}
+            className="md:hidden border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-fade-in-up"
+          >
+            <nav className="px-4 py-4 space-y-2 max-h-[calc(100vh-5rem)] overflow-y-auto">
+              {/* Diário Financeiro - Mobile */}
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase px-4 py-2">
+                  Diário Financeiro
+                </div>
+                <button
+                  onClick={() => { onNavigate('manual_pf'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    currentView === 'manual_pf'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-govgreen border-l-4 border-govgreen'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 border-l-4 border-transparent'
+                  }`}
+                >
+                  Pessoa Física
+                </button>
+                <button
+                  onClick={() => { onNavigate('manual_pj'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    currentView === 'manual_pj'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-govblue border-l-4 border-govblue'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-l-4 border-transparent'
+                  }`}
+                >
+                  Pessoa Jurídica (MEI)
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
+
+              {/* Gestão Fiscal */}
+              <button
+                onClick={() => { onNavigate('tax'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  currentView === 'tax'
+                    ? 'bg-govblue text-white shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Gestão Fiscal
+              </button>
+
+              {/* Prestação de Contas */}
+              <button
+                onClick={() => { onNavigate('accountability'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  currentView === 'accountability'
+                    ? 'bg-govblue text-white shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Prestação de Contas
+              </button>
+
+              {/* Precificação */}
+              <button
+                onClick={() => { onNavigate('pricing'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  currentView === 'pricing'
+                    ? 'bg-govblue text-white shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Precificação
+              </button>
+
+              {/* Gráficos e Relatórios */}
+              <button
+                onClick={() => { onNavigate('reports'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  currentView === 'reports'
+                    ? 'bg-govblue text-white shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Gráficos e Relatórios
+              </button>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
+
+              {/* User Info & Logout - Mobile */}
+              <div className="px-4 py-3 bg-gray-50 dark:bg-slate-900 rounded-lg">
+                <p className="text-xs text-gray-400 font-semibold uppercase mb-1">Usuário</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">gov.br/artista</p>
+                <button
+                  onClick={() => { onLogout(); setIsMobileMenuOpen(false); }}
+                  className="w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                  Sair do Sistema
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
