@@ -15,6 +15,61 @@ interface AccountabilityProps {
 
 const COLORS = ['#1351b4', '#009a44', '#f37021', '#475569', '#94a3b8', '#e2e8f0'];
 
+// Helper: Validate CPF/CNPJ Checksum
+const isValidCpfCnpj = (val: string): boolean => {
+    if (!val) return false;
+    const clean = val.replace(/\D/g, '');
+
+    // Check for repetitive digits (e.g., 111.111.111-11)
+    if (/^(\d)\1+$/.test(clean)) return false;
+
+    // Validate CPF
+    if (clean.length === 11) {
+        let sum = 0;
+        let remainder;
+        for (let i = 1; i <= 9; i++) sum += parseInt(clean.substring(i - 1, i)) * (11 - i);
+        remainder = (sum * 10) % 11;
+        if ((remainder === 10) || (remainder === 11)) remainder = 0;
+        if (remainder !== parseInt(clean.substring(9, 10))) return false;
+
+        sum = 0;
+        for (let i = 1; i <= 10; i++) sum += parseInt(clean.substring(i - 1, i)) * (12 - i);
+        remainder = (sum * 10) % 11;
+        if ((remainder === 10) || (remainder === 11)) remainder = 0;
+        if (remainder !== parseInt(clean.substring(10, 11))) return false;
+        return true;
+    }
+
+    // Validate CNPJ
+    if (clean.length === 14) {
+        let size = clean.length - 2;
+        let numbers = clean.substring(0, size);
+        const digits = clean.substring(size);
+        let sum = 0;
+        let pos = size - 7;
+        for (let i = size; i >= 1; i--) {
+            sum += parseInt(numbers.charAt(size - i)) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+        if (result !== parseInt(digits.charAt(0))) return false;
+
+        size = size + 1;
+        numbers = clean.substring(0, size);
+        sum = 0;
+        pos = size - 7;
+        for (let i = size; i >= 1; i--) {
+            sum += parseInt(numbers.charAt(size - i)) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+        if (result !== parseInt(digits.charAt(1))) return false;
+        return true;
+    }
+
+    return false;
+};
+
 const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onSaveProject }) => {
   // Navigation & Selection State
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -26,6 +81,9 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
   const [newProject, setNewProject] = useState<Partial<ProjectMetadata>>({ legislation: 'LPG', budget: 0 });
   const [budgetLines, setBudgetLines] = useState<BudgetLineItem[]>([]);
   const [projectFormError, setProjectFormError] = useState('');
+  
+  // Real-time Field Validation State
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   // Budget Line Input State
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -138,6 +196,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
     
     setBudgetLines(activeProjectData.budgetLines || []);
     setProjectFormError('');
+    setFieldErrors({});
     setViewMode('register');
   };
 
@@ -206,18 +265,21 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
       e.preventDefault();
       setProjectFormError('');
 
+      // Check for any field errors before saving
+      if (Object.keys(fieldErrors).length > 0) {
+          setProjectFormError('Corrija os erros no formulário antes de salvar.');
+          return;
+      }
+
       if (!newProject.name) {
           setProjectFormError('O nome do projeto é obrigatório.');
           return;
       }
 
-      // Validate CPF/CNPJ
-      if (newProject.proponentDoc) {
-          const cleanDoc = newProject.proponentDoc.replace(/\D/g, '');
-          if (cleanDoc.length !== 11 && cleanDoc.length !== 14) {
-              setProjectFormError('CPF (11 dígitos) ou CNPJ (14 dígitos) incompleto ou inválido.');
-              return;
-          }
+      // Final validate CPF/CNPJ if present
+      if (newProject.proponentDoc && !isValidCpfCnpj(newProject.proponentDoc)) {
+          setProjectFormError('Documento inválido. Verifique CPF ou CNPJ.');
+          return;
       }
 
       // Sum budget from lines if lines exist, otherwise use manual total
@@ -244,7 +306,59 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
       setBudgetLines([]);
       setLineError('');
       setProjectFormError('');
+      setFieldErrors({});
       setEditingLineId(null);
+  };
+
+  // --- Real-time Validation Handlers ---
+
+  const handleNameChange = (val: string) => {
+      setNewProject({...newProject, name: val});
+      if (!val.trim()) {
+          setFieldErrors(prev => ({...prev, name: 'O nome do projeto é obrigatório.'}));
+      } else {
+          const newErrors = {...fieldErrors};
+          delete newErrors.name;
+          setFieldErrors(newErrors);
+      }
+  };
+
+  const handleDocChange = (val: string) => {
+      const masked = maskCpfCnpj(val);
+      setNewProject({...newProject, proponentDoc: masked});
+      
+      const clean = masked.replace(/\D/g, '');
+      // Only validate format if length indicates a full document is being attempted
+      if (clean.length === 11 || clean.length === 14) {
+          if (!isValidCpfCnpj(masked)) {
+              setFieldErrors(prev => ({...prev, proponentDoc: 'CPF/CNPJ inválido (verifique os dígitos).'}));
+          } else {
+              const newErrors = {...fieldErrors};
+              delete newErrors.proponentDoc;
+              setFieldErrors(newErrors);
+          }
+      } else if (clean.length > 0) {
+          // While typing...
+          setFieldErrors(prev => ({...prev, proponentDoc: 'Digite o CPF (11) ou CNPJ (14) completo.'}));
+      } else {
+          // Empty is technically allowed unless we enforce it as required
+          const newErrors = {...fieldErrors};
+          delete newErrors.proponentDoc;
+          setFieldErrors(newErrors);
+      }
+  };
+
+  const handleBudgetChange = (val: string) => {
+      const num = parseFloat(val);
+      setNewProject({...newProject, budget: isNaN(num) ? 0 : num});
+      
+      if (num < 0) {
+          setFieldErrors(prev => ({...prev, budget: 'O valor não pode ser negativo.'}));
+      } else {
+          const newErrors = {...fieldErrors};
+          delete newErrors.budget;
+          setFieldErrors(newErrors);
+      }
   };
 
   const handleImportMapaCultural = () => {
@@ -367,6 +481,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                           onClick={() => {
                               setViewMode('register');
                               setProjectFormError('');
+                              setFieldErrors({});
                           }}
                           className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border-2 border-transparent hover:border-govblue dark:hover:border-blue-500 hover:shadow-lg transition-all group text-left relative overflow-hidden"
                       >
@@ -406,6 +521,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                               setNewProject({ legislation: 'LPG', budget: 0, proponentDoc: '' });
                               setBudgetLines([]);
                               setProjectFormError('');
+                              setFieldErrors({});
                               setEditingLineId(null);
                           }} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -425,12 +541,10 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                       required
                                       placeholder="Ex: Curta-metragem O Sol do Sertão"
                                       value={newProject.name || ''}
-                                      onChange={e => {
-                                          setNewProject({...newProject, name: e.target.value});
-                                          setProjectFormError('');
-                                      }}
-                                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                      onChange={e => handleNameChange(e.target.value)}
+                                      className={`w-full px-4 py-3 rounded-xl border ${fieldErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-slate-600 focus:ring-govblue'} bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 outline-none transition-colors`}
                                   />
+                                  {fieldErrors.name && <p className="text-red-500 text-xs mt-1 font-bold">{fieldErrors.name}</p>}
                               </div>
                               <div>
                                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Edital / Lei</label>
@@ -467,13 +581,11 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                                       required
                                       placeholder="00.000.000/0000-00"
                                       value={newProject.proponentDoc || ''}
-                                      onChange={e => {
-                                          setNewProject({...newProject, proponentDoc: maskCpfCnpj(e.target.value)});
-                                          setProjectFormError('');
-                                      }}
+                                      onChange={e => handleDocChange(e.target.value)}
                                       maxLength={18}
-                                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-govblue outline-none"
+                                      className={`w-full px-4 py-3 rounded-xl border ${fieldErrors.proponentDoc ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-slate-600 focus:ring-govblue'} bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 outline-none transition-colors`}
                                   />
+                                  {fieldErrors.proponentDoc && <p className="text-red-500 text-xs mt-1 font-bold">{fieldErrors.proponentDoc}</p>}
                               </div>
                           </div>
 
@@ -482,6 +594,21 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
                               <h4 className="font-bold text-lg text-gray-800 dark:text-white mb-2">Planejamento Orçamentário (Planilha de Aplicação)</h4>
                               <p className="text-sm text-gray-500 mb-4">Adicione ou edite as rubricas conforme aprovado no projeto.</p>
                               
+                              {/* Global Budget Field if no lines are added yet or just general entry */}
+                              {budgetLines.length === 0 && (
+                                  <div className="mb-6">
+                                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Valor Total do Orçamento (Estimado)</label>
+                                      <input 
+                                          type="number"
+                                          value={newProject.budget}
+                                          onChange={e => handleBudgetChange(e.target.value)}
+                                          className={`w-full md:w-1/3 px-4 py-3 rounded-xl border ${fieldErrors.budget ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-slate-600 focus:ring-govblue'} bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 outline-none`}
+                                      />
+                                      {fieldErrors.budget && <p className="text-red-500 text-xs mt-1 font-bold">{fieldErrors.budget}</p>}
+                                      <p className="text-xs text-gray-500 mt-1">Este valor será substituído pela soma das rubricas assim que você adicionar itens abaixo.</p>
+                                  </div>
+                              )}
+
                               <div className={`p-4 rounded-xl border border-gray-200 dark:border-slate-600 mb-4 transition-colors ${editingLineId ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200' : 'bg-gray-50 dark:bg-slate-900/50'}`}>
                                   {editingLineId && (
                                       <div className="flex justify-between items-center mb-2">
