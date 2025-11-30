@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 interface HeaderProps {
   currentView: string;
-  onNavigate: (view: 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax') => void;
+  onNavigate: (view: 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing') => void;
   onLogout: () => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
@@ -114,14 +114,14 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                   onClick={() => onNavigate('tax')}
                   className={getLinkClass(currentView === 'tax')}
                 >
-                  Gestão Fiscal
+                  Fiscal
                 </button>
-                
+
                 <button 
-                  onClick={() => onNavigate('import')}
-                  className={getLinkClass(currentView === 'import')}
+                  onClick={() => onNavigate('pricing')}
+                  className={getLinkClass(currentView === 'pricing')}
                 >
-                  Diagnóstico IA
+                  Precificação
                 </button>
              </nav>
           </div>

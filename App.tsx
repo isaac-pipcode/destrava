@@ -6,10 +6,11 @@ import ImportFlow from './components/ImportFlow'; // Serves as AI Diagnosis
 import Accountability from './components/Accountability';
 import Reports from './components/Reports';
 import TaxManager from './components/TaxManager';
+import PricingCalculator from './components/PricingCalculator';
 import Login from './components/Login';
 import { Transaction, ProjectMetadata, BankAccount } from './types';
 
-type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax';
+type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -132,6 +133,8 @@ const App: React.FC = () => {
             onNavigate={(view) => setCurrentView(view)}
           />
         );
+      case 'pricing':
+        return <PricingCalculator />;
       case 'import':
         return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
       default:
