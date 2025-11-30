@@ -5,10 +5,11 @@ import ManualManager from './components/ManualManager';
 import ImportFlow from './components/ImportFlow'; // Serves as AI Diagnosis
 import Accountability from './components/Accountability';
 import Reports from './components/Reports';
+import TaxManager from './components/TaxManager';
 import Login from './components/Login';
 import { Transaction, ProjectMetadata, BankAccount } from './types';
 
-type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports';
+type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -122,6 +123,13 @@ const App: React.FC = () => {
             transactions={transactions} 
             projects={projects}
             onSaveProject={handleSaveProject}
+          />
+        );
+      case 'tax':
+        return (
+          <TaxManager 
+            transactions={transactions} 
+            onNavigate={(view) => setCurrentView(view)}
           />
         );
       case 'import':
