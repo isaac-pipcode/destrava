@@ -5,9 +5,10 @@ interface DashboardHomeProps {
   onNavigate: (view: 'import' | 'manual' | 'accountability' | 'manual_pf' | 'manual_pj') => void;
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  onLoadDemo?: () => void;
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions, setTransactions }) => {
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions, setTransactions, onLoadDemo }) => {
   
   // Calculate Stats separately for PF and PJ
   const calculateHealth = (entity: 'PF' | 'PJ') => {
@@ -40,26 +41,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  const loadDemoData = () => {
-      const today = new Date();
-      const currentMonth = today.toLocaleString('pt-BR', { month: 'long' });
-      const monthStr = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
-
-      const demoData: Transaction[] = [
-          // PJ Data
-          { id: '1', description: 'Cachê Sesc - Show Solo', amount: 8500, type: 'inflow', category: 'Cachê Artístico/Serviço', project: 'Turnê 2025', date: today.toISOString(), month: monthStr, entity: 'PJ', paymentDoc: 'NF 102', supplierDoc: '00.000.000/0001-91' },
-          { id: '2', description: '1ª Parcela LPG', amount: 30000, type: 'inflow', category: 'Edital/Lei de Incentivo', project: 'Curta Metragem', date: today.toISOString(), month: monthStr, entity: 'PJ', paymentDoc: 'OB 20239', supplierDoc: 'MinC' },
-          { id: '3', description: 'Aluguel Câmera Red', amount: 4500, type: 'outflow', category: 'Equipamentos/Software', project: 'Curta Metragem', date: today.toISOString(), month: monthStr, entity: 'PJ', paymentDoc: 'Pix E293', supplierDoc: '22.333.444/0001-88' },
-          { id: '4', description: 'DAS MEI', amount: 75, type: 'outflow', category: 'Impostos (MEI/Simples)', project: 'Administrativo', date: today.toISOString(), month: monthStr, entity: 'PJ' },
-          
-          // PF Data
-          { id: '5', description: 'Transferência de Lucro (PJ p/ PF)', amount: 4000, type: 'inflow', category: 'Outros', project: 'Pessoal', date: today.toISOString(), month: monthStr, entity: 'PF' },
-          { id: '6', description: 'Aluguel Apartamento', amount: 1800, type: 'outflow', category: 'Outros', project: 'Pessoal', date: today.toISOString(), month: monthStr, entity: 'PF' },
-          { id: '7', description: 'Supermercado Mensal', amount: 900, type: 'outflow', category: 'Alimentação', project: 'Pessoal', date: today.toISOString(), month: monthStr, entity: 'PF' },
-      ];
-      setTransactions(demoData);
-  };
-
   return (
     <div className="animate-fade-in-up">
       {/* Modern Artistic Hero Banner */}
@@ -90,12 +71,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
       {/* Cards de Saúde Financeira Separados */}
       <div className="flex justify-between items-end mb-4 px-2">
         <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Visão Geral dos Saldos</h3>
-        {transactions.length === 0 && (
+        {onLoadDemo && transactions.length < 5 && (
             <button 
-            onClick={loadDemoData}
-            className="text-sm font-bold text-govblue dark:text-blue-400 hover:text-govorange underline transition-colors"
+            onClick={onLoadDemo}
+            className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-bold border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors animate-pulse"
             >
-            Carregar dados de exemplo (Demo)
+            🚀 Carregar Modo Demonstração (Dados Completos)
             </button>
         )}
       </div>

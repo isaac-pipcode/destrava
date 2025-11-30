@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Transaction, ProjectMetadata, BudgetLineItem, ProjectStage, ExpenseNature } from '../types';
 import { maskCpfCnpj } from './ManualManager'; // Import reuse mask logic
+import { generateId } from '../App'; // Using the compatible ID generator
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -227,7 +227,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
       } else {
         // Add new line
         const newLine: BudgetLineItem = {
-            id: crypto.randomUUID(),
+            id: generateId(), // Using safe ID
             activity: lineActivity,
             expenseItem: lineItem,
             stage: lineStage,
@@ -288,7 +288,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
           : (newProject.budget || 0);
 
       const project: ProjectMetadata = {
-          id: newProject.id || crypto.randomUUID(), // Use existing ID if editing
+          id: newProject.id || generateId(), // Use existing ID if editing, else generate new
           name: newProject.name,
           legislation: newProject.legislation || 'Outros',
           budget: calculatedBudget,
@@ -367,7 +367,7 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
 
       setTimeout(() => {
           const mockProject: ProjectMetadata = {
-              id: crypto.randomUUID(),
+              id: generateId(), // Using safe ID
               name: "Festival de Arte Integrada (Importado)",
               legislation: "PNAB",
               budget: 75000.00,

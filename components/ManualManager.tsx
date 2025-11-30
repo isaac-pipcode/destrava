@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Transaction, ProjectMetadata, BudgetLineItem, BankAccount, BankName } from '../types';
 import { parseBankStatement } from '../services/geminiService';
+import { generateId } from '../App'; // Using the compatible ID generator
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -298,7 +299,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const handleAddAccount = () => {
       if(newAccountName.trim() && onAddAccount) {
           onAddAccount({
-              id: crypto.randomUUID(),
+              id: generateId(), // Using safe ID
               name: newAccountName,
               bank: newAccountBank,
               entityType: viewContext
@@ -383,7 +384,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     // Generate Transactions (1 or many if recurring)
     const newTransactions: Transaction[] = [];
     const loopCount = editId ? 1 : (isRecurring ? recurrenceMonths : 1);
-    const relatedId = isRecurring ? crypto.randomUUID() : undefined;
+    const relatedId = isRecurring ? generateId() : undefined; // Using safe ID
     
     // Determine start date based on SELECTED YEAR and Month
     let currentMonthIndex = MONTHS.indexOf(selectedMonth);
@@ -404,7 +405,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
         let dateObj = new Date(year, monthIndex, day);
 
         newTransactions.push({
-            id: editId && i === 0 ? editId : crypto.randomUUID(),
+            id: editId && i === 0 ? editId : generateId(), // Using safe ID
             description: loopCount > 1 ? `${description} (${i+1}/${loopCount})` : description,
             amount: numAmount,
             type,
@@ -501,7 +502,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
            yearCounts[itemYear] = (yearCounts[itemYear] || 0) + 1;
 
            return {
-             id: crypto.randomUUID(),
+             id: generateId(), // Using safe ID
              ...item,
              month: itemMonth,
              project: '',
