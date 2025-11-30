@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Transaction, ProjectMetadata, BudgetLineItem, BankAccount, BankName } from '../types';
 import { parseBankStatement } from '../services/geminiService';
@@ -281,6 +280,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({
       const line = selectedProjectBudgetLines.find(l => l.id === lineId);
       if (line) {
           setCategory(line.expenseItem); // Override generic category with the specific Item Name
+      } else {
+          // Reset to default category if deselected
+          setCategory(availableCategories[0] || '');
       }
   };
 
@@ -874,6 +876,12 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                           onChange={(e) => {
                               setProject(e.target.value);
                               setBudgetLineId(''); // Reset budget line if project changes
+                              // When project changes, ensure category is reset to default to avoid stale "linked" category
+                              if (e.target.value && projects.find(p => p.name === e.target.value)?.budgetLines?.length) {
+                                  // Wait for user to select rubrica or pick category
+                              } else {
+                                  setCategory(availableCategories[0] || '');
+                              }
                           }}
                           className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
                       >
@@ -964,12 +972,35 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                       </button>
                     </div>
                  </div>
+                 
                  <div className="col-span-2">
+                     {/* BUDGET LINE SELECTOR */}
+                     {viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && (
+                         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800">
+                            <label className="block text-xs font-bold text-govblue dark:text-blue-400 mb-1 uppercase tracking-wide flex justify-between">
+                                <span>Vincular Rubrica ({type === 'inflow' ? 'Entrada' : 'Saída'})</span>
+                                <span className="text-[10px] font-normal opacity-70">Opcional</span>
+                            </label>
+                            <select 
+                                value={budgetLineId}
+                                onChange={(e) => handleBudgetLineSelect(e.target.value)}
+                                className={`w-full rounded-lg border border-blue-200 dark:border-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
+                            >
+                                <option value="">-- Selecione (Geral / Sem Vínculo) --</option>
+                                {selectedProjectBudgetLines.map(line => (
+                                    <option key={line.id} value={line.id}>
+                                        {line.expenseItem} ({line.stage}) - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(line.plannedAmount)}
+                                    </option>
+                                ))}
+                            </select>
+                         </div>
+                     )}
+
                     <div className="flex justify-between items-center mb-1">
                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            {viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && type === 'outflow' ? 'Item Orçamentário (Rubrica)' : 'Categoria'}
+                            Categoria {budgetLineId && <span className="text-govblue ml-1">(Definida pela Rubrica)</span>}
                         </label>
-                        {!isAddingCategory && selectedProjectBudgetLines.length === 0 && (
+                        {!isAddingCategory && !budgetLineId && (
                             <button 
                                 type="button" 
                                 onClick={() => setIsAddingCategory(true)}
@@ -994,29 +1025,18 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                             <button type="button" onClick={() => setIsAddingCategory(false)} className="bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-gray-200 px-3 py-2 rounded-lg text-xs font-bold">X</button>
                         </div>
                     ) : (
-                        // Logic Swap: If PJ project selected AND it has budget lines AND is outflow, show Budget Selector
-                        viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && type === 'outflow' ? (
-                             <select 
-                                value={budgetLineId}
-                                onChange={(e) => handleBudgetLineSelect(e.target.value)}
-                                className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
-                            >
-                                <option value="">-- Selecione o item do orçamento --</option>
-                                {selectedProjectBudgetLines.map(line => (
-                                    <option key={line.id} value={line.id}>
-                                        {line.expenseItem} ({line.stage})
-                                    </option>
-                                ))}
-                            </select>
-                        ) : (
-                            <select 
+                         <select 
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor}`}
-                            >
+                            disabled={!!budgetLineId}
+                            className={`w-full rounded-xl border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm focus:outline-none focus:ring-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:${themeBorder} focus:ring-${themeColor} ${!!budgetLineId ? 'opacity-75 cursor-not-allowed bg-gray-50 dark:bg-slate-800' : ''}`}
+                         >
+                            {/* If editing a transaction with a category not in list (from budget line), make sure it shows up */}
+                            {budgetLineId && !availableCategories.includes(category) && (
+                                <option value={category}>{category}</option>
+                            )}
                             {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        )
+                        </select>
                     )}
 
                     {/* Description Tooltip */}
