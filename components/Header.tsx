@@ -15,8 +15,8 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
 
   const getLinkClass = (isActive: boolean) => {
     return isActive
-      ? "text-white bg-govblue px-4 py-2 rounded-md font-bold text-sm shadow-md"
-      : "text-gray-600 dark:text-gray-300 hover:text-govblue dark:hover:text-white hover:bg-blue-50 dark:hover:bg-slate-800 px-4 py-2 rounded-md font-medium text-sm transition-all";
+      ? "text-white bg-govblue px-4 py-2.5 rounded-lg font-semibold text-sm shadow-md transition-all"
+      : "text-gray-700 dark:text-gray-300 hover:text-govblue dark:hover:text-white hover:bg-blue-50 dark:hover:bg-slate-800 px-4 py-2.5 rounded-lg font-medium text-sm transition-all";
   };
 
   // Close user menu when clicking outside
@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
   return (
     <header className="bg-white dark:bg-slate-800 border-b-4 border-govgreen sticky top-0 z-50 shadow-sm transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
+        <div className="flex justify-between items-center h-20">
           <div className="flex items-center gap-8">
              <div 
                className="flex items-center gap-3 cursor-pointer group"
@@ -51,44 +51,37 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                     <div className="absolute bottom-1.5 w-2 h-2 bg-govorange rounded-full z-20"></div>
                 </div>
 
-                <div className="flex items-start gap-1">
-                    <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tighter leading-none">DESTRAVA</h1>
-                    <span className="bg-blue-100 text-govblue border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase self-start mt-1">Beta</span>
+                <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none">DESTRAVA</h1>
+                    <span className="bg-blue-100 text-govblue border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Beta</span>
                 </div>
              </div>
 
-             <nav className="hidden md:flex items-center space-x-2">
-                <button 
-                  onClick={() => onNavigate('dashboard')}
-                  className={getLinkClass(currentView === 'dashboard')}
-                >
-                  Painel
-                </button>
-                
-                {/* Dropdown for Diário Financeiro */}
-                <div 
+             <nav className="hidden md:flex items-center space-x-1.5">
+                {/* 1. Diário Financeiro - Dropdown */}
+                <div
                   className="relative group"
                   onMouseEnter={() => setIsDropdownOpen(true)}
                   onMouseLeave={() => setIsDropdownOpen(false)}
                 >
-                  <button 
-                    className={`flex items-center gap-1 ${getLinkClass(currentView.startsWith('manual'))}`}
+                  <button
+                    className={`flex items-center gap-1.5 ${getLinkClass(currentView.startsWith('manual'))}`}
                   >
                     Diário Financeiro
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
-                  
+
                   {isDropdownOpen && (
-                    <div className="absolute top-full left-0 w-48 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-lg shadow-xl py-2 animate-fade-in-up">
-                      <button 
+                    <div className="absolute top-full left-0 mt-1 w-52 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl shadow-xl py-2 animate-fade-in-up">
+                      <button
                         onClick={() => { onNavigate('manual_pf'); setIsDropdownOpen(false); }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-govgreen font-bold border-l-4 border-transparent hover:border-govgreen"
+                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-govgreen font-semibold border-l-4 border-transparent hover:border-govgreen transition-all"
                       >
                         Pessoa Física
                       </button>
-                      <button 
+                      <button
                         onClick={() => { onNavigate('manual_pj'); setIsDropdownOpen(false); }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-govblue font-bold border-l-4 border-transparent hover:border-govblue"
+                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-govblue font-semibold border-l-4 border-transparent hover:border-govblue transition-all"
                       >
                         Pessoa Jurídica (MEI)
                       </button>
@@ -96,40 +89,44 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                   )}
                 </div>
 
-                <button 
-                  onClick={() => onNavigate('reports')}
-                  className={getLinkClass(currentView === 'reports')}
+                {/* 2. Gestão Fiscal */}
+                <button
+                  onClick={() => onNavigate('tax')}
+                  className={getLinkClass(currentView === 'tax')}
                 >
-                  Relatórios
+                  Gestão Fiscal
                 </button>
 
-                <button 
+                {/* 3. Prestação de Contas */}
+                <button
                   onClick={() => onNavigate('accountability')}
                   className={getLinkClass(currentView === 'accountability')}
                 >
                   Prestação de Contas
                 </button>
 
-                <button 
-                  onClick={() => onNavigate('tax')}
-                  className={getLinkClass(currentView === 'tax')}
-                >
-                  Fiscal
-                </button>
-
-                <button 
+                {/* 4. Precificação */}
+                <button
                   onClick={() => onNavigate('pricing')}
                   className={getLinkClass(currentView === 'pricing')}
                 >
                   Precificação
                 </button>
+
+                {/* 5. Gráficos e Relatórios */}
+                <button
+                  onClick={() => onNavigate('reports')}
+                  className={getLinkClass(currentView === 'reports')}
+                >
+                  Gráficos e Relatórios
+                </button>
              </nav>
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="hidden md:block text-right">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Apoio à Gestão</p>
-                <p className="text-xs font-bold text-govblue dark:text-blue-400">Trabalhadores da Cultura</p>
+             <div className="hidden lg:block text-right">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-tight">Apoio à Gestão</p>
+                <p className="text-xs font-semibold text-govblue dark:text-blue-400">Trabalhadores da Cultura</p>
              </div>
              
              {/* Theme Toggle */}
