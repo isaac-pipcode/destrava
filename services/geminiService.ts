@@ -1,17 +1,42 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { FinancialMonth, FinancialInsight, Transaction } from "../types";
 
-// Initialize Gemini AI
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy Initialization Variable
+let aiInstance: GoogleGenAI | null = null;
 
 const DATA_PARSING_MODEL = "gemini-2.5-flash";
 const INSIGHT_MODEL = "gemini-2.5-flash";
+
+/**
+ * Safely retrieves the AI instance or throws a user-friendly error.
+ */
+const getAI = (): GoogleGenAI => {
+    if (aiInstance) return aiInstance;
+
+    // Access the env var injected by Vite
+    const apiKey = process.env.API_KEY;
+
+    if (!apiKey || apiKey.trim() === '' || apiKey.includes('undefined')) {
+        console.warn("API Key is missing or invalid.");
+        throw new Error("A Chave de API (API_KEY) não está configurada neste ambiente. Configure-a no Vercel ou .env.");
+    }
+
+    try {
+        aiInstance = new GoogleGenAI({ apiKey: apiKey });
+        return aiInstance;
+    } catch (e) {
+        console.error("Failed to initialize GoogleGenAI", e);
+        throw new Error("Falha ao inicializar o serviço de IA. Verifique sua chave.");
+    }
+};
 
 /**
  * Parses raw CSV/text financial data into a structured JSON format.
  */
 export const parseFinancialData = async (csvContent: string): Promise<FinancialMonth[]> => {
   try {
+    const ai = getAI(); // Lazy load here
+    
     const prompt = `
       Analyze the following CSV/Text data representing a Cultural/Creative Business Cash Flow.
       For each month, extract Forecast vs Realized.
@@ -77,9 +102,10 @@ export const parseFinancialData = async (csvContent: string): Promise<FinancialM
 
     return JSON.parse(response.text) as FinancialMonth[];
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error parsing financial data:", error);
-    throw new Error("Failed to process the uploaded file.");
+    // Propagate friendly error message
+    throw new Error(error.message || "Failed to process the uploaded file.");
   }
 };
 
@@ -88,6 +114,8 @@ export const parseFinancialData = async (csvContent: string): Promise<FinancialM
  */
 export const parseBankStatement = async (textContent: string): Promise<Omit<Transaction, 'id' | 'month'>[]> => {
   try {
+    const ai = getAI(); // Lazy load here
+
     const prompt = `
       You are a specialized financial assistant for Artists and Cultural Producers in Brazil (MEI/ME).
       Analyze the text below (bank statement transactions).
@@ -142,9 +170,12 @@ export const parseBankStatement = async (textContent: string): Promise<Omit<Tran
     
     return JSON.parse(response.text) as Omit<Transaction, 'id' | 'month'>[];
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error parsing bank statement:", error);
-    throw new Error("Não foi possível interpretar o formato do extrato.");
+    if (error.message && error.message.includes("API Key")) {
+        throw error;
+    }
+    throw new Error("Não foi possível interpretar o formato do extrato. Verifique se o texto está legível.");
   }
 };
 
@@ -153,6 +184,8 @@ export const parseBankStatement = async (textContent: string): Promise<Omit<Tran
  */
 export const generateFinancialInsights = async (data: FinancialMonth[]): Promise<FinancialInsight[]> => {
     try {
+        const ai = getAI(); // Lazy load here
+
         const dataSummary = JSON.stringify(data.map(m => ({
             month: m.month,
             realizedNet: m.realized.balance,
@@ -203,9 +236,10 @@ export const generateFinancialInsights = async (data: FinancialMonth[]): Promise
 
     } catch (error) {
         console.error("Error generating insights:", error);
+        // Do not throw here, just return empty to not break the dashboard
         return [{
             title: "Análise Indisponível",
-            description: "No momento não consigo gerar insights sobre sua carreira.",
+            description: "No momento não consigo gerar insights sobre sua carreira. Verifique a configuração da chave de API.",
             type: "info"
         }];
     }
