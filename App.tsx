@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import DashboardHome from './components/DashboardHome';
@@ -8,6 +9,7 @@ import Reports from './components/Reports';
 import TaxManager from './components/TaxManager';
 import PricingCalculator from './components/PricingCalculator';
 import Login from './components/Login';
+import PresentationModal from './components/PresentationModal';
 import { Transaction, ProjectMetadata, BankAccount, BudgetLineItem } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing';
@@ -29,6 +31,7 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isPresentationOpen, setIsPresentationOpen] = useState(false);
   
   // --- STATE WITH PERSISTENCE ---
   
@@ -293,7 +296,11 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        onOpenPresentation={() => setIsPresentationOpen(true)}
       />
+      
+      <PresentationModal isOpen={isPresentationOpen} onClose={() => setIsPresentationOpen(false)} />
+      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderView()}
       </main>
@@ -302,3 +309,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+    

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 
 interface HeaderProps {
@@ -6,9 +7,10 @@ interface HeaderProps {
   onLogout: () => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
+  onOpenPresentation: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDarkMode, toggleTheme }) => {
+const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDarkMode, toggleTheme, onOpenPresentation }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -127,11 +129,15 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="hidden md:block text-right">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Apoio à Gestão</p>
-                <p className="text-xs font-bold text-govblue dark:text-blue-400">Trabalhadores da Cultura</p>
-             </div>
              
+             <button
+               onClick={onOpenPresentation}
+               className="hidden md:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-govblue bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+               title="Ver Pitch do Produto"
+             >
+               <span className="text-lg">✨</span> Apresentação
+             </button>
+
              {/* Theme Toggle */}
              <button 
                onClick={toggleTheme}
@@ -160,6 +166,14 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                             <p className="text-xs text-gray-400 font-bold uppercase">Usuário</p>
                             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">gov.br/artista</p>
                         </div>
+                        
+                        <button 
+                            onClick={() => { onOpenPresentation(); setIsUserMenuOpen(false); }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium md:hidden"
+                        >
+                            Ver Apresentação
+                        </button>
+
                         <button 
                             onClick={onLogout}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 font-bold flex items-center gap-2"
@@ -178,3 +192,4 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
 };
 
 export default Header;
+    
