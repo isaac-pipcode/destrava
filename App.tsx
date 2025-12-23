@@ -102,6 +102,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTransaction = (id: string) => {
+    // A confirmação agora é feita internamente pelo componente ManualManager
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
