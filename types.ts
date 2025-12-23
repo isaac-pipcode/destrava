@@ -53,6 +53,18 @@ export interface BankAccount {
   entityType: 'PF' | 'PJ';
 }
 
+export interface Cnae {
+  code: string;
+  description: string;
+}
+
+export interface BusinessProfile {
+  cnpj: string;
+  companyName: string;
+  mainCnae?: Cnae;
+  secondaryCnaes: Cnae[];
+}
+
 export interface Transaction {
   id: string;
   description: string;
@@ -60,7 +72,7 @@ export interface Transaction {
   type: 'inflow' | 'outflow';
   category: string;
   project?: string; 
-  projectId?: string; // New field for robust linking
+  projectId?: string;
   date: string; 
   month: string; 
   entity: 'PF' | 'PJ'; 

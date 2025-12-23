@@ -12,7 +12,7 @@ import Documentation from './components/Documentation';
 import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
-import { Transaction, ProjectMetadata, BankAccount, BudgetLineItem } from './types';
+import { Transaction, ProjectMetadata, BankAccount, BusinessProfile } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
 
@@ -52,6 +52,11 @@ const App: React.FC = () => {
       return saved ? JSON.parse(saved) : [];
   });
 
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(() => {
+    const saved = localStorage.getItem('app_business_profile');
+    return saved ? JSON.parse(saved) : { cnpj: '', companyName: '', secondaryCnaes: [] };
+  });
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -68,6 +73,7 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('app_projects', JSON.stringify(projects)); }, [projects]);
   useEffect(() => { localStorage.setItem('app_accounts', JSON.stringify(accounts)); }, [accounts]);
   useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(customCategories)); }, [customCategories]);
+  useEffect(() => { localStorage.setItem('app_business_profile', JSON.stringify(businessProfile)); }, [businessProfile]);
 
   const toggleTheme = () => {
     if (isDarkMode) {
@@ -142,8 +148,8 @@ const App: React.FC = () => {
       case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
       case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
       case 'reports': return <Reports transactions={transactions} />;
-      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} onEditTransaction={(id) => { const t = transactions.find(tx => tx.id === id); if(t) { setCurrentView(t.entity === 'PJ' ? 'manual_pj' : 'manual_pf'); /* The logic for edit mode would need state injection or we just jump to the manual manager where the item will be sorted by date */ } }} onDeleteTransaction={handleDeleteTransaction} />;
-      case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view)} />;
+      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} onEditTransaction={(id) => { const t = transactions.find(tx => tx.id === id); if(t) { setCurrentView(t.entity === 'PJ' ? 'manual_pj' : 'manual_pf'); } }} onDeleteTransaction={handleDeleteTransaction} />;
+      case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view)} businessProfile={businessProfile} onUpdateProfile={setBusinessProfile} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;
       case 'branding': return <BrandingTool />;

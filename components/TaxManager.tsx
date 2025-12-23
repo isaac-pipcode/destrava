@@ -1,11 +1,14 @@
 
 import React, { useState, useMemo } from 'react';
-import { Transaction } from '../types';
+import { Transaction, BusinessProfile, Cnae } from '../types';
+import { maskCpfCnpj } from './ManualManager';
 
 interface TaxManagerProps {
   transactions: Transaction[];
   setTransactions?: React.Dispatch<React.SetStateAction<Transaction[]>>;
   onNavigate: (view: 'manual_pj') => void;
+  businessProfile: BusinessProfile;
+  onUpdateProfile: (profile: BusinessProfile) => void;
 }
 
 const MONTHS = [
@@ -13,7 +16,20 @@ const MONTHS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, onNavigate }) => {
+const CULTURAL_CNAES: Cnae[] = [
+  { code: '9001-9/01', description: 'Produção de espetáculos circenses, de marionetes e similares' },
+  { code: '9001-9/02', description: 'Produção musical' },
+  { code: '9001-9/03', description: 'Produção de espetáculos de dança' },
+  { code: '9001-9/06', description: 'Atividades de sonorização e de iluminação' },
+  { code: '9003-5/00', description: 'Gestão de espaços para artes cênicas, espetáculos e outras atividades artísticas' },
+  { code: '5911-1/99', description: 'Atividades de produção cinematográfica, de vídeos e de programas de televisão' },
+  { code: '8592-9/01', description: 'Ensino de dança' },
+  { code: '8592-9/99', description: 'Ensino de arte e cultura não especificado anteriormente' },
+  { code: '7490-1/05', description: 'Agenciamento de profissionais para atividades culturais e artísticas' },
+  { code: '8230-0/01', description: 'Serviços de organização de feiras, congressos, exposições e festas' }
+];
+
+const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, onNavigate, businessProfile, onUpdateProfile }) => {
   const currentYear = new Date().getFullYear();
   const MEI_LIMIT = 81000;
   
@@ -28,6 +44,10 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
 
   // Monthly Detail View State
   const [selectedTaxMonth, setSelectedTaxMonth] = useState<string | null>(null);
+  
+  // Profile Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [tempProfile, setTempProfile] = useState<BusinessProfile>({ ...businessProfile });
 
   const revenuePJ = useMemo(() => {
     return transactions
@@ -37,7 +57,6 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
 
   const percentageUsed = (revenuePJ / MEI_LIMIT) * 100;
 
-  // Identified as Service category (Cachê) without an invoice number
   const pendingInvoices = useMemo(() => {
     return transactions
       .filter(t => t.entity === 'PJ' && t.type === 'inflow' && t.category === 'Cachê Artístico/Serviço' && !t.paymentDoc)
@@ -74,9 +93,18 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
       setQuickNf('');
   };
 
+  const handleSaveProfile = () => {
+    onUpdateProfile(tempProfile);
+    setIsEditingProfile(false);
+  };
+
   const handleGenerateText = () => {
+    const cnaeLine = businessProfile.mainCnae 
+        ? `\nCNAE: ${businessProfile.mainCnae.code} - ${businessProfile.mainCnae.description}` 
+        : '';
+
     const text = `PRESTAÇÃO DE SERVIÇOS DE ${serviceDesc.toUpperCase()}.
-REFERENTE AO MÊS DE ${MONTHS[new Date().getMonth()].toUpperCase()}/${currentYear}.
+REFERENTE AO MÊS DE ${MONTHS[new Date().getMonth()].toUpperCase()}/${currentYear}.${cnaeLine}
 
 VALOR TOTAL: R$ ${serviceValue}
 
@@ -96,6 +124,77 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
 
   return (
     <div className="animate-fade-in-up pb-12">
+      {/* SEÇÃO: PERFIL DE NEGÓCIO / CNAE */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-8 border-t-8 border-govblue">
+        <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Perfil da Empresa / CNAE</h3>
+            {!isEditingProfile && (
+                <button onClick={() => setIsEditingProfile(true)} className="text-xs font-bold text-govblue hover:underline">Editar Perfil</button>
+            )}
+        </div>
+
+        {isEditingProfile ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase">Razão Social / Nome MEI</label>
+                        <input type="text" value={tempProfile.companyName} onChange={e => setTempProfile({...tempProfile, companyName: e.target.value})} className="w-full rounded-xl border px-4 py-2 text-sm bg-gray-50 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase">CNPJ</label>
+                        <input type="text" value={tempProfile.cnpj} onChange={e => setTempProfile({...tempProfile, cnpj: maskCpfCnpj(e.target.value)})} className="w-full rounded-xl border px-4 py-2 text-sm bg-gray-50 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">CNAE Principal de Serviço</label>
+                        <select 
+                            value={tempProfile.mainCnae?.code || ''} 
+                            onChange={e => {
+                                const found = CULTURAL_CNAES.find(c => c.code === e.target.value);
+                                setTempProfile({...tempProfile, mainCnae: found});
+                            }}
+                            className="w-full rounded-xl border px-4 py-2 text-sm bg-gray-50 dark:bg-slate-900 dark:text-white"
+                        >
+                            <option value="">-- Selecione o CNAE --</option>
+                            {CULTURAL_CNAES.map(c => (
+                                <option key={c.code} value={c.code}>{c.code} - {c.description}</option>
+                            ))}
+                        </select>
+                        <p className="text-[9px] text-gray-400 mt-1 italic">* O CNAE correto garante que você pague o imposto certo (Anexo III para cultura).</p>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                        <button onClick={handleSaveProfile} className="flex-grow py-2 bg-govblue text-white text-xs font-black rounded-xl shadow-md">Salvar Configurações</button>
+                        <button onClick={() => setIsEditingProfile(false)} className="px-4 py-2 text-xs font-bold text-gray-500">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        ) : (
+            <div className="flex flex-wrap gap-8 items-center">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-govblue text-xl font-bold">🏢</div>
+                    <div>
+                        <p className="text-xs font-black text-gray-800 dark:text-white">{businessProfile.companyName || 'Empresa não configurada'}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{businessProfile.cnpj || '00.000.000/0001-00'}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-govgreen text-xl font-bold">📄</div>
+                    <div>
+                        <p className="text-xs font-black text-gray-800 dark:text-white">CNAE Ativo: {businessProfile.mainCnae?.code || 'Pendente'}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter truncate max-w-[200px]">{businessProfile.mainCnae?.description || 'Configure no botão ao lado'}</p>
+                    </div>
+                </div>
+                {!businessProfile.mainCnae && (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 px-4 py-2 rounded-xl border border-dashed border-orange-200 flex items-center gap-2">
+                        <span className="animate-pulse">⚠️</span>
+                        <p className="text-[10px] font-bold text-orange-600">Configure seu CNAE para habilitar o gerador de NF automático.</p>
+                    </div>
+                )}
+            </div>
+        )}
+      </div>
+
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 mb-8 border-l-8 border-govorange">
          <h2 className="text-3xl font-display font-bold text-gray-800 dark:text-white mb-2">Gestão Fiscal MEI</h2>
          <p className="text-gray-500 dark:text-gray-400">
