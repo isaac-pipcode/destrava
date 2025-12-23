@@ -54,41 +54,51 @@ const PresentationModal: React.FC<PresentationModalProps> = ({ isOpen, onClose }
       )
     },
     {
-      title: "Proposta de Valor",
-      icon: "💎",
+      title: "Plano de Crescimento",
+      icon: "📈",
       content: (
         <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg font-bold text-xs">ROI</div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Economia de <strong>20h/mês</strong> por produtor em tarefas burocráticas.</p>
+          <div className="flex gap-4 items-center border-b border-gray-100 dark:border-slate-700 pb-3">
+             <div className="h-10 w-10 rounded-full bg-blue-100 text-govblue flex items-center justify-center font-bold">01</div>
+             <div>
+                <h4 className="text-xs font-bold uppercase">Escalabilidade Cloud</h4>
+                <p className="text-[11px] text-gray-500">Migração para banco de dados centralizado e Gov.br Auth.</p>
+             </div>
           </div>
-          <div className="flex items-start gap-3">
-            <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg font-bold text-xs">SEG</div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Segurança contra multas e devolução de verbas de editais.</p>
+          <div className="flex gap-4 items-center border-b border-gray-100 dark:border-slate-700 pb-3">
+             <div className="h-10 w-10 rounded-full bg-green-100 text-govgreen flex items-center justify-center font-bold">02</div>
+             <div>
+                <h4 className="text-xs font-bold uppercase">Integração Bancária</h4>
+                <p className="text-[11px] text-gray-500">Conexão direta via Open Finance para automação total.</p>
+             </div>
           </div>
-          <div className="flex items-start gap-3">
-            <div className="bg-purple-100 text-purple-600 p-2 rounded-lg font-bold text-xs">DATA</div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Inteligência de dados sobre o mercado criativo do Brasil.</p>
+          <div className="flex gap-4 items-center">
+             <div className="h-10 w-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">03</div>
+             <div>
+                <h4 className="text-xs font-bold uppercase">Serviços & Marketplace</h4>
+                <p className="text-[11px] text-gray-500">Conexão com contadores e emissão de NFs nativa.</p>
+             </div>
           </div>
         </div>
       )
     },
     {
-      title: "Plano para 2.000 Usuários",
-      icon: "📈",
+      title: "Por que investir?",
+      icon: "💎",
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 text-[11px] mb-4">
-            <div className="bg-gray-100 dark:bg-slate-700 p-2 rounded"><strong>Infra:</strong> Serverless (Escala infinita)</div>
-            <div className="bg-gray-100 dark:bg-slate-700 p-2 rounded"><strong>Custo IA:</strong> $0.05 / usuário / mês</div>
+          <div className="flex items-start gap-3">
+            <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg font-bold text-xs">ROI</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Economia de <strong>20h/mês</strong> em tarefas burocráticas.</p>
           </div>
-          <h4 className="text-xs font-bold uppercase text-gray-400">Passo a Passo:</h4>
-          <ol className="text-xs text-gray-600 dark:text-gray-300 space-y-2">
-            <li><strong>1. Centralização:</strong> Migração de dados locais para Cloud (Supabase).</li>
-            <li><strong>2. Segurança:</strong> Auditoria LGPD e criptografia de dados financeiros.</li>
-            <li><strong>3. Onboarding:</strong> Criação de Central de Ajuda e Tutoriais em vídeo.</li>
-            <li><strong>4. Expansão:</strong> Integração direta via Open Finance (Banco Central).</li>
-          </ol>
+          <div className="flex items-start gap-3">
+            <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg font-bold text-xs">SEG</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Segurança contra multas e devolução de verbas públicas.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="bg-purple-100 text-purple-600 p-2 rounded-lg font-bold text-xs">DATA</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">A maior base de dados financeira da economia criativa.</p>
+          </div>
         </div>
       )
     }
