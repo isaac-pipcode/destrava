@@ -61,8 +61,10 @@ export interface Cnae {
 export interface BusinessProfile {
   cnpj: string;
   companyName: string;
+  regime: 'MEI' | 'ME';
   mainCnae?: Cnae;
   secondaryCnaes: Cnae[];
+  lastPayrollTotal?: number; // Para cálculo de Fator R (ME)
 }
 
 export interface Transaction {
