@@ -61,7 +61,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
   // --- FORM STATE ---
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(''); // Text format for BRL handling
   const [type, setType] = useState<'inflow' | 'outflow'>('inflow');
   const [category, setCategory] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
@@ -113,6 +113,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const activeProject = useMemo(() => projects.find(p => p.id === selectedProjectId), [projects, selectedProjectId]);
   const selectedProjectBudgetLines = useMemo(() => activeProject?.budgetLines || [], [activeProject]);
 
+  // Fiscal Compliance Logic
   const isServiceCategory = useMemo(() => category === 'Cachê Artístico/Serviço' && type === 'inflow' && viewContext === 'PJ', [category, type, viewContext]);
 
   const currentBudgetLineBalance = useMemo(() => {
@@ -136,7 +137,15 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     e.preventDefault();
     if (!description || !amount) return;
 
-    const numAmount = parseFloat(amount.replace(',', '.'));
+    // Brazilian Currency Parsing (Handle comma as decimal)
+    const cleanAmount = amount.replace(/\./g, '').replace(',', '.');
+    const numAmount = parseFloat(cleanAmount);
+    
+    if (isNaN(numAmount)) {
+        alert("Por favor, insira um valor numérico válido.");
+        return;
+    }
+
     let finalProjectName = selectedProjectId === 'custom' ? customProjectName : (activeProject?.name || '');
 
     let linkedBudgetLine: BudgetLineItem | undefined;
@@ -167,6 +176,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     setSelectedMonth(MONTHS[formDate.getMonth()]);
     setSelectedYear(formDate.getFullYear());
 
+    // Reset
     setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false);
     setFormDate(new Date());
   };
@@ -174,7 +184,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const handleEditClick = (t: Transaction) => {
     const tDate = new Date(t.date);
     setDescription(t.description);
-    setAmount(t.amount.toString());
+    // Convert back to Brazilian display (dot for thousands, comma for decimal)
+    setAmount(t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
     setType(t.type);
     setCategory(t.category);
     setFormDate(tDate);
@@ -285,7 +296,22 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 {isDatePickerOpen && <DatePicker />}
               </div>
               <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white" required /></div>
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label><input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white" required /></div>
+              
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3.5 text-xs font-bold text-gray-400">R$</span>
+                  <input 
+                    type="text" 
+                    value={amount} 
+                    onChange={(e) => setAmount(e.target.value)} 
+                    placeholder="0,00"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-900 dark:text-white font-bold" 
+                    required 
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4"><button type="button" onClick={() => setType('inflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'inflow' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400'}`}>ENTRADA</button><button type="button" onClick={() => setType('outflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'outflow' ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400'}`}>SAÍDA</button></div>
               <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Projeto</label><select value={selectedProjectId} onChange={(e) => { setSelectedProjectId(e.target.value); setBudgetLineId(''); }} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white"><option value="">Geral / Administrativo</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="custom">Outro...</option></select></div>
               
@@ -304,6 +330,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 </select>
               </div>
 
+              {/* DYNAMIC FISCAL COMPLIANCE SECTION */}
               {isServiceCategory && (
                   <div className="p-5 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border-2 border-orange-200 dark:border-orange-800 animate-fade-in">
                       <div className="flex items-center gap-2 mb-3">
@@ -311,7 +338,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                           <h4 className="text-xs font-black text-orange-800 dark:text-orange-300 uppercase tracking-wide">Gestão Fiscal</h4>
                       </div>
                       <p className="text-[10px] text-orange-700 dark:text-orange-400 font-bold mb-4 leading-relaxed">
-                          Este item requer emissão de Nota Fiscal para conformidade com o MEI.
+                          Serviços exigem obrigatoriamente a emissão de Nota Fiscal (MEI/ME).
                       </p>
                       
                       <div className="flex flex-col gap-3">
@@ -334,9 +361,11 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                                 className="w-full px-4 py-2 text-xs rounded-xl border-2 border-orange-200 bg-white dark:bg-slate-900 dark:text-white focus:border-orange-500 outline-none"
                             />
                         ) : (
-                            <p className="text-[9px] font-black text-orange-500 uppercase tracking-tighter opacity-80">
-                                * Será listado como pendente no painel fiscal.
-                            </p>
+                            <div className="p-3 bg-white/50 dark:bg-slate-900 rounded-xl border border-dashed border-orange-300">
+                                <p className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">
+                                    Atenção: Este item será listado como pendente no painel fiscal.
+                                </p>
+                            </div>
                         )}
                       </div>
                   </div>

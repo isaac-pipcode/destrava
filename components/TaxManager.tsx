@@ -37,9 +37,10 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
 
   const percentageUsed = (revenuePJ / MEI_LIMIT) * 100;
 
+  // Identified as Service category (Cachê) without an invoice number
   const pendingInvoices = useMemo(() => {
     return transactions
-      .filter(t => t.entity === 'PJ' && t.type === 'inflow' && !t.paymentDoc)
+      .filter(t => t.entity === 'PJ' && t.type === 'inflow' && t.category === 'Cachê Artístico/Serviço' && !t.paymentDoc)
       .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions]);
 
@@ -111,13 +112,13 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                 <span className="text-3xl font-bold text-govblue dark:text-blue-400">{formatCurrency(revenuePJ)}</span>
                 <span className="text-xs text-gray-400 font-bold uppercase">Limite: {formatCurrency(MEI_LIMIT)}</span>
             </div>
-            <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-4 mb-4 overflow-hidden">
+            <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
                 <div 
-                    className={`h-4 rounded-full transition-all duration-1000 ${percentageUsed > 80 ? 'bg-red-50' : percentageUsed > 50 ? 'bg-orange-400' : 'bg-govgreen'}`} 
+                    className={`h-4 rounded-full transition-all duration-1000 ${percentageUsed > 80 ? 'bg-red-500' : percentageUsed > 50 ? 'bg-orange-400' : 'bg-govgreen'}`} 
                     style={{ width: `${Math.min(percentageUsed, 100)}%` }}
                 ></div>
             </div>
-            <div className="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-xl text-sm text-gray-600 dark:text-gray-300">
+            <div className="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-xl text-sm text-gray-600 dark:text-gray-300 border border-dashed border-gray-200">
                 {percentageUsed < 80 ? <p>Você utilizou <strong>{percentageUsed.toFixed(1)}%</strong> do seu limite anual. ✅</p> : <p className="text-orange-600 dark:text-orange-400 font-bold">Atenção! Você está próximo do limite. ⚠️</p>}
             </div>
         </div>
@@ -149,8 +150,8 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
           <div className="mb-8 p-6 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border-2 border-govblue animate-fade-in-up">
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                   <div>
-                    <h3 className="text-xl font-black text-govblue uppercase tracking-tight">Detalhamento: {selectedTaxMonth}</h3>
-                    <p className="text-xs font-bold text-gray-400">CONFORMIDADE DE NOTAS FISCAIS</p>
+                    <h3 className="text-xl font-black text-govblue uppercase tracking-tight">Detalhamento Mensal: {selectedTaxMonth}</h3>
+                    <p className="text-xs font-bold text-gray-400">VERIFICAÇÃO DE DOCUMENTAÇÃO FISCAL</p>
                   </div>
                   <button onClick={() => setSelectedTaxMonth(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl">×</button>
               </div>
@@ -159,22 +160,22 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                   <table className="w-full text-left">
                       <thead>
                           <tr className="text-[10px] font-black text-gray-400 uppercase border-b">
-                              <th className="px-4 py-3">Descrição / Fornecedor</th>
+                              <th className="px-4 py-3">Descrição / Item</th>
                               <th className="px-4 py-3">Categoria</th>
                               <th className="px-4 py-3 text-right">Valor</th>
-                              <th className="px-4 py-3 text-center">NF-e</th>
+                              <th className="px-4 py-3 text-center">Nota Fiscal</th>
                               <th className="px-4 py-3 text-right">Ação</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y">
                           {monthTransactions.length === 0 ? (
-                              <tr><td colSpan={5} className="py-8 text-center text-gray-400 italic">Nenhuma transação PJ registrada neste mês.</td></tr>
+                              <tr><td colSpan={5} className="py-8 text-center text-gray-400 italic">Nenhum lançamento registrado para este mês.</td></tr>
                           ) : (
                               monthTransactions.map(t => (
                                   <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
                                       <td className="px-4 py-4">
                                           <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{t.description}</p>
-                                          <p className="text-[10px] text-gray-400">{t.project || 'Geral'}</p>
+                                          <p className="text-[10px] text-gray-400">{t.project || 'Administrativo'}</p>
                                       </td>
                                       <td className="px-4 py-4 text-xs text-gray-500">{t.category}</td>
                                       <td className={`px-4 py-4 text-right font-bold text-sm ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -183,8 +184,10 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                                       <td className="px-4 py-4 text-center">
                                           {t.paymentDoc ? (
                                               <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-md">NF: {t.paymentDoc}</span>
+                                          ) : t.category === 'Cachê Artístico/Serviço' ? (
+                                              <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-md animate-pulse">NF PENDENTE</span>
                                           ) : (
-                                              <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-md">PENDENTE</span>
+                                              <span className="text-gray-300">-</span>
                                           )}
                                       </td>
                                       <td className="px-4 py-4 text-right">
@@ -195,12 +198,12 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                                                     value={quickNf} 
                                                     onChange={e => setQuickNf(e.target.value)}
                                                     className="w-20 px-2 py-1 text-[10px] border-2 border-govblue rounded"
-                                                    placeholder="Nº Nota"
+                                                    placeholder="Nº NF"
                                                   />
                                                   <button onClick={() => handleQuickResolve(t.id)} className="bg-govblue text-white px-2 py-1 rounded text-[10px]">OK</button>
                                               </div>
                                           ) : (
-                                              <button onClick={() => setSolvingId(t.id)} className="text-govblue hover:underline text-[10px] font-bold">Editar NF</button>
+                                              <button onClick={() => setSolvingId(t.id)} className="text-govblue hover:underline text-[10px] font-bold">Vincular NF</button>
                                           )}
                                       </td>
                                   </tr>
@@ -215,15 +218,15 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
               <h3 className="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2">
-                  <span>⚠️</span> Pendências Fiscais Globais
+                  <span>⚠️</span> Receitas sem Nota Fiscal
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium italic">
-                  Serviços recebidos que ainda não possuem registro de Nota Fiscal (NF-e).
+                  O Destrava identificou serviços que precisam de emissão de nota para regularizar seu faturamento.
               </p>
 
               {pendingInvoices.length === 0 ? (
                   <div className="p-8 text-center bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
-                      <p className="text-green-700 dark:text-green-300 font-bold">Parabéns! Nenhuma pendência fiscal pendente.</p>
+                      <p className="text-green-700 dark:text-green-300 font-bold">Parabéns! Suas notas estão em dia. ✅</p>
                   </div>
               ) : (
                   <div className="max-h-80 overflow-y-auto pr-2 custom-scroll space-y-4">
@@ -245,12 +248,12 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                                         type="text" 
                                         value={quickNf} 
                                         onChange={(e) => setQuickNf(e.target.value)}
-                                        placeholder="Nº da NF"
+                                        placeholder="Número da Nota"
                                         className="flex-grow px-3 py-1.5 text-xs rounded-lg border-2 border-orange-300 bg-white dark:bg-slate-900 dark:text-white"
                                         autoFocus
                                       />
-                                      <button onClick={() => handleQuickResolve(t.id)} className="px-3 py-1.5 bg-govblue text-white text-xs font-black rounded-lg">SALVAR</button>
-                                      <button onClick={() => setSolvingId(null)} className="px-2 py-1.5 text-gray-400 text-xs">×</button>
+                                      <button onClick={() => handleQuickResolve(t.id)} className="px-3 py-1.5 bg-govblue text-white text-xs font-black rounded-lg">LANÇAR</button>
+                                      <button onClick={() => setSolvingId(null)} className="px-2 py-1.5 text-gray-400 text-xs font-bold">×</button>
                                   </div>
                               ) : (
                                   <button 
@@ -268,15 +271,16 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
 
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><span>📝</span> Gerador de Texto para NF</h3>
+              <p className="text-xs text-gray-400 mb-4 font-bold uppercase">Agilize o preenchimento no site da prefeitura</p>
               <div className="space-y-3">
-                  <input type="text" placeholder="Descrição do Serviço" value={serviceDesc} onChange={e => setServiceDesc(e.target.value)} className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm dark:text-white" />
+                  <input type="text" placeholder="Ex: Show voz e violão na Praça Central" value={serviceDesc} onChange={e => setServiceDesc(e.target.value)} className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm dark:text-white" />
                   <input type="text" placeholder="Valor (R$)" value={serviceValue} onChange={e => setServiceValue(e.target.value)} className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm dark:text-white" />
-                  <textarea placeholder="Dados Bancários" value={bankInfo} onChange={e => setBankInfo(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm dark:text-white" />
-                  <button onClick={handleGenerateText} className="w-full py-2 bg-govblue text-white font-bold rounded-lg text-sm">Gerar Descrição</button>
+                  <textarea placeholder="Dados Bancários para o Tomador" value={bankInfo} onChange={e => setBankInfo(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm dark:text-white" />
+                  <button onClick={handleGenerateText} className="w-full py-2 bg-govblue text-white font-bold rounded-lg text-sm shadow-md transition-transform active:scale-95">Gerar Descrição Padrão</button>
                   {generatedText && (
-                      <div className="mt-4 relative">
-                          <textarea readOnly value={generatedText} rows={5} className="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 text-[10px] font-mono border" />
-                          <button onClick={copyToClipboard} className="absolute top-2 right-2 bg-white px-2 py-1 rounded border text-[10px] font-bold">Copiar</button>
+                      <div className="mt-4 relative animate-fade-in">
+                          <textarea readOnly value={generatedText} rows={5} className="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 text-[10px] font-mono border border-indigo-100" />
+                          <button onClick={copyToClipboard} className="absolute top-2 right-2 bg-white px-2 py-1 rounded border shadow-sm text-[10px] font-bold hover:bg-govblue hover:text-white transition-colors">Copiar</button>
                       </div>
                   )}
               </div>
