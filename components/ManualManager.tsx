@@ -75,6 +75,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
+  const [hasInvoice, setHasInvoice] = useState(false); // New state for fiscal compliance
   const [editId, setEditId] = useState<string | null>(null);
 
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
@@ -95,7 +96,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({
       return [...baseList, ...customCategories];
   }, [viewContext, type, customCategories]);
 
-  useEffect(() => { setCategory(availableCategories[0]); }, [type, viewContext, availableCategories]);
+  useEffect(() => { 
+    if (!editId) setCategory(availableCategories[0]); 
+  }, [type, viewContext, availableCategories, editId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -108,6 +111,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
   const activeProject = useMemo(() => projects.find(p => p.id === selectedProjectId), [projects, selectedProjectId]);
   const selectedProjectBudgetLines = useMemo(() => activeProject?.budgetLines || [], [activeProject]);
+
+  const isServiceCategory = useMemo(() => category === 'Cachê Artístico/Serviço' && type === 'inflow' && viewContext === 'PJ', [category, type, viewContext]);
 
   const currentBudgetLineBalance = useMemo(() => {
     if (!budgetLineId || !activeProject) return null;
@@ -145,7 +150,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
         project: finalProjectName,
         projectId: selectedProjectId !== 'custom' && selectedProjectId !== '' ? selectedProjectId : undefined,
         supplierDoc,
-        paymentDoc,
+        paymentDoc: hasInvoice ? paymentDoc : '', // Explicitly clear if not marked as having invoice
         date: formDate.toISOString(),
         month: MONTHS[formDate.getMonth()],
         entity: viewContext,
@@ -158,12 +163,11 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     if (editId) setTransactions(prev => prev.map(t => t.id === editId ? newTx : t));
     else setTransactions(prev => [...prev, newTx]);
     
-    // Reset view to saved date
     setSelectedMonth(MONTHS[formDate.getMonth()]);
     setSelectedYear(formDate.getFullYear());
 
     // Reset Form
-    setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null);
+    setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false);
     setFormDate(new Date());
   };
 
@@ -177,7 +181,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     if (t.projectId) { setSelectedProjectId(t.projectId); setCustomProjectName(''); setBudgetLineId(t.budgetLineId || ''); }
     else if (t.project) { setSelectedProjectId('custom'); setCustomProjectName(t.project); }
     else setSelectedProjectId('');
-    setSupplierDoc(t.supplierDoc || ''); setPaymentDoc(t.paymentDoc || '');
+    setSupplierDoc(t.supplierDoc || ''); 
+    setPaymentDoc(t.paymentDoc || '');
+    setHasInvoice(!!t.paymentDoc);
     if (t.accountId) setSelectedAccountId(t.accountId);
     setEditId(t.id);
     setSelectedMonth(t.month);
@@ -278,20 +284,67 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 <button type="button" onClick={() => setIsDatePickerOpen(!isDatePickerOpen)} className="w-full flex items-center justify-between rounded-2xl border px-4 py-3 text-sm bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white font-bold transition-all hover:border-govblue">{formDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</button>
                 {isDatePickerOpen && <DatePicker />}
               </div>
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm dark:bg-slate-900 dark:text-white" required /></div>
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label><input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm dark:bg-slate-900 dark:text-white" required /></div>
-              <div className="grid grid-cols-2 gap-4"><button type="button" onClick={() => setType('inflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'inflow' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-transparent text-gray-400'}`}>ENTRADA</button><button type="button" onClick={() => setType('outflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'outflow' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-gray-50 border-transparent text-gray-400'}`}>SAÍDA</button></div>
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Projeto</label><select value={selectedProjectId} onChange={(e) => { setSelectedProjectId(e.target.value); setBudgetLineId(''); }} className="w-full rounded-2xl border px-4 py-3 text-sm dark:bg-slate-900 dark:text-white"><option value="">Geral / Administrativo</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="custom">Outro...</option></select></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white" required /></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label><input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white" required /></div>
+              <div className="grid grid-cols-2 gap-4"><button type="button" onClick={() => setType('inflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'inflow' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400'}`}>ENTRADA</button><button type="button" onClick={() => setType('outflow')} className={`py-3 text-xs font-black rounded-2xl border-2 ${type === 'outflow' ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400'}`}>SAÍDA</button></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Projeto</label><select value={selectedProjectId} onChange={(e) => { setSelectedProjectId(e.target.value); setBudgetLineId(''); }} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white"><option value="">Geral / Administrativo</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="custom">Outro...</option></select></div>
+              
               {viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
                     <label className="block text-[10px] font-black text-govblue mb-2 uppercase tracking-widest">Rubrica Orçamentária</label>
-                    <select value={budgetLineId} onChange={(e) => handleBudgetLineSelect(e.target.value)} className="w-full rounded-xl border px-3 py-2 text-xs bg-white dark:bg-slate-900 dark:text-white">{optionPrefix}{selectedProjectBudgetLines.map(line => <option key={line.id} value={line.id}>{line.expenseItem}</option>)}</select>
+                    <select value={budgetLineId} onChange={(e) => handleBudgetLineSelect(e.target.value)} className="w-full rounded-xl border px-3 py-2 text-xs bg-white dark:bg-slate-900 dark:text-white"><option value="">-- Selecione a Rubrica --</option>{selectedProjectBudgetLines.map(line => <option key={line.id} value={line.id}>{line.expenseItem}</option>)}</select>
                     {currentBudgetLineBalance !== null && <p className={`mt-2 text-[10px] font-bold ${currentBudgetLineBalance < 0 ? 'text-red-500' : 'text-govblue'}`}>Saldo Restante: {formatCurrency(currentBudgetLineBalance)}</p>}
                   </div>
               )}
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Categoria</label><select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!budgetLineId} className="w-full rounded-2xl border px-4 py-3 text-sm dark:bg-slate-900 dark:text-white">{availableCategories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Categoria</label>
+                <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!budgetLineId} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white">
+                    {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* DYNAMIC FISCAL COMPLIANCE SECTION */}
+              {isServiceCategory && (
+                  <div className="p-5 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border-2 border-orange-200 dark:border-orange-800 animate-fade-in">
+                      <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl">💼</span>
+                          <h4 className="text-xs font-black text-orange-800 dark:text-orange-300 uppercase tracking-wide">Gestão Fiscal</h4>
+                      </div>
+                      <p className="text-[10px] text-orange-700 dark:text-orange-400 font-bold mb-4 leading-relaxed">
+                          Este item requer emissão de Nota Fiscal para conformidade com o MEI.
+                      </p>
+                      
+                      <div className="flex flex-col gap-3">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={hasInvoice} 
+                                onChange={(e) => setHasInvoice(e.target.checked)} 
+                                className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                            />
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 group-hover:text-orange-700">Documento Fiscal emitido?</span>
+                        </label>
+
+                        {hasInvoice ? (
+                            <input 
+                                type="text" 
+                                value={paymentDoc} 
+                                onChange={(e) => setPaymentDoc(e.target.value)}
+                                placeholder="Nº da Nota Fiscal (NF-e)"
+                                className="w-full px-4 py-2 text-xs rounded-xl border-2 border-orange-200 bg-white dark:bg-slate-900 dark:text-white focus:border-orange-500 outline-none"
+                            />
+                        ) : (
+                            <p className="text-[9px] font-black text-orange-500 uppercase tracking-tighter opacity-80">
+                                * Será listado como pendente no painel fiscal.
+                            </p>
+                        )}
+                      </div>
+                  </div>
+              )}
+
               <button type="submit" className={`w-full py-4 px-4 rounded-2xl shadow-xl text-sm font-black text-white uppercase tracking-widest ${themeButton}`}>{editId ? 'Salvar Alterações' : '+ Adicionar Lançamento'}</button>
-              {editId && <button type="button" onClick={() => { setEditId(null); setDescription(''); setAmount(''); setSelectedProjectId(''); setFormDate(new Date()); }} className="w-full text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest">Cancelar Edição</button>}
+              {editId && <button type="button" onClick={() => { setEditId(null); setDescription(''); setAmount(''); setSelectedProjectId(''); setFormDate(new Date()); setHasInvoice(false); }} className="w-full text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest">Cancelar Edição</button>}
             </form>
           </div>
         </div>
@@ -317,7 +370,5 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     </div>
   );
 };
-
-const optionPrefix = <option value="">-- Selecione a Rubrica --</option>;
 
 export default ManualManager;
