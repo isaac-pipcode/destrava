@@ -32,6 +32,9 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
   
+  // State for invoice simulation pre-load
+  const [activeInvoiceTransactionId, setActiveInvoiceTransactionId] = useState<string | undefined>(undefined);
+  
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('app_transactions');
     return saved ? JSON.parse(saved) : [];
@@ -102,8 +105,12 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTransaction = (id: string) => {
-    // A confirmação agora é feita internamente pelo componente ManualManager
     setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleGenerateInvoice = (id: string) => {
+      setActiveInvoiceTransactionId(id);
+      setCurrentView('tax');
   };
 
   const generateRobustDemoData = useCallback(() => {
@@ -145,10 +152,10 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
       case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={handleGenerateInvoice} />;
       case 'reports': return <Reports transactions={transactions} />;
       case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} onEditTransaction={(id) => { const t = transactions.find(tx => tx.id === id); if(t) { setCurrentView(t.entity === 'PJ' ? 'manual_pj' : 'manual_pf'); } }} onDeleteTransaction={handleDeleteTransaction} />;
-      case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view)} businessProfile={businessProfile} onUpdateProfile={setBusinessProfile} />;
+      case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view as any)} businessProfile={businessProfile} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;
       case 'branding': return <BrandingTool />;

@@ -44,11 +44,12 @@ interface ManualManagerProps {
   projects?: ProjectMetadata[];
   accounts?: BankAccount[];
   onAddAccount?: (account: BankAccount) => void;
+  onGenerateInvoice?: (transactionId: string) => void;
 }
 
 const ManualManager: React.FC<ManualManagerProps> = ({ 
     transactions, setTransactions, onDeleteTransaction, viewContext, customCategories, onAddCategory, 
-    projects = [], accounts = [], onAddAccount 
+    projects = [], accounts = [], onAddAccount, onGenerateInvoice 
 }) => {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[today.getMonth()]);
@@ -112,8 +113,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const activeProject = useMemo(() => projects.find(p => p.id === selectedProjectId), [projects, selectedProjectId]);
   const selectedProjectBudgetLines = useMemo(() => activeProject?.budgetLines || [], [activeProject]);
 
-  const isServiceCategory = useMemo(() => category === 'Cachê Artístico/Serviço' && type === 'inflow' && viewContext === 'PJ', [category, type, viewContext]);
-
   const handleBudgetLineSelect = (lineId: string) => {
       setBudgetLineId(lineId);
       const line = selectedProjectBudgetLines.find(l => l.id === lineId);
@@ -160,7 +159,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     setSelectedMonth(MONTHS[formDate.getMonth()]);
     setSelectedYear(formDate.getFullYear());
 
-    // Reset Form
     resetForm();
   };
 
@@ -419,7 +417,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                                 <td className={`px-8 py-5 text-right font-black text-sm ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
                                     {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                                 </td>
-                                <td className="px-6 py-5 text-center min-w-[160px]">
+                                <td className="px-6 py-5 text-center min-w-[200px]">
                                     <div className="flex items-center justify-center gap-2 transition-opacity">
                                         {deletingId === t.id ? (
                                             <div className="flex items-center gap-1 bg-red-50 dark:bg-red-900/30 p-1 rounded-xl border border-red-200 dark:border-red-800 animate-fade-in">
@@ -429,11 +427,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                                             </div>
                                         ) : (
                                             <>
-                                                <button onClick={() => handleEditClick(t)} className="p-2.5 bg-blue-50 dark:bg-slate-700 rounded-xl text-govblue dark:text-blue-400 hover:bg-govblue hover:text-white transition-all shadow-sm" title="Editar Lançamento">
+                                                {t.type === 'inflow' && t.category === 'Cachê Artístico/Serviço' && viewContext === 'PJ' && (
+                                                    <button onClick={() => onGenerateInvoice?.(t.id)} className="p-2.5 bg-govblue/10 dark:bg-slate-700 rounded-xl text-govblue dark:text-blue-400 hover:bg-govblue hover:text-white transition-all shadow-sm" title="Gerar Espelho de Nota Fiscal">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleEditClick(t)} className="p-2.5 bg-blue-50 dark:bg-slate-700 rounded-xl text-govblue dark:text-blue-400 hover:bg-govblue hover:text-white transition-all shadow-sm" title="Editar">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                                </button>
-                                                <button onClick={() => handleDuplicateClick(t)} className="p-2.5 bg-emerald-50 dark:bg-slate-700 rounded-xl text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Duplicar">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                                                 </button>
                                                 <button onClick={() => setDeletingId(t.id)} className="p-2.5 bg-red-50 dark:bg-slate-700 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm" title="Excluir">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -449,7 +449,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
             </div>
             {sortedTransactions.length > visibleCount && (
                 <div className="p-4 text-center border-t bg-gray-50 dark:bg-slate-900/30">
-                    <button onClick={() => setVisibleCount(prev => prev + 20)} className="text-xs font-black text-gray-400 hover:text-govblue uppercase tracking-widest">Carregar Mais Lançamentos ↓</button>
+                    <button onClick={() => setVisibleCount(prev => prev + 20)} className="text-xs font-black text-gray-400 hover:text-govblue uppercase tracking-widest">Carregar Mais ↓</button>
                 </div>
             )}
           </div>
