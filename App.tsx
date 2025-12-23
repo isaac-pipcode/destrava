@@ -102,9 +102,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTransaction = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este lançamento?")) {
-        setTransactions(prev => prev.filter(t => t.id !== id));
-    }
+    setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
   const generateRobustDemoData = useCallback(() => {

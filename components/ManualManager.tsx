@@ -58,6 +58,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const monthPickerRef = useRef<HTMLDivElement>(null);
   
   const [visibleCount, setVisibleCount] = useState(20);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // --- FORM STATE ---
   const [description, setDescription] = useState('');
@@ -65,7 +66,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const [type, setType] = useState<'inflow' | 'outflow'>('inflow');
   const [category, setCategory] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
-  
   const [formDate, setFormDate] = useState<Date>(today);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [customProjectName, setCustomProjectName] = useState('');
   const [budgetLineId, setBudgetLineId] = useState('');
-
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
   const [hasInvoice, setHasInvoice] = useState(false); 
@@ -162,6 +161,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     setSelectedYear(formDate.getFullYear());
 
     // Reset Form
+    resetForm();
+  };
+
+  const resetForm = () => {
     setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false);
     setFormDate(new Date());
   };
@@ -181,15 +184,11 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     setHasInvoice(!!t.paymentDoc);
     if (t.accountId) setSelectedAccountId(t.accountId);
     setEditId(t.id);
-    setSelectedMonth(t.month);
-    setSelectedYear(tDate.getFullYear());
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDuplicateClick = (t: Transaction) => {
       const duplicated = { ...t, id: generateId(), date: new Date().toISOString() };
       setTransactions(prev => [...prev, duplicated]);
-      alert("Lançamento duplicado com sucesso!");
   };
 
   const DatePicker = () => {
@@ -250,13 +249,75 @@ const ManualManager: React.FC<ManualManagerProps> = ({
       return acc;
   }, { inflow: 0, outflow: 0 }), [currentMonthTransactions]);
 
-  const previousBalance = useMemo(() => {
-    const startOfView = new Date(selectedYear, MONTHS.indexOf(selectedMonth), 1);
-    return currentEntityTransactions.reduce((acc, t) => new Date(t.date) < startOfView ? acc + (t.type === 'inflow' ? t.amount : -t.amount) : acc, 0);
-  }, [currentEntityTransactions, selectedMonth, selectedYear]);
+  const EditModal = () => {
+    if (!editId) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+        <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in-up border-t-8 border-orange-400">
+           <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tighter leading-none">Editar Lançamento</h3>
+                  <p className="text-[10px] font-bold text-orange-500 uppercase mt-1 tracking-widest">Alteração de Registro Existente</p>
+                </div>
+                <button onClick={resetForm} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveTransaction} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative" ref={datePickerRef}>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Data</label>
+                    <button type="button" onClick={() => setIsDatePickerOpen(!isDatePickerOpen)} className="w-full flex items-center justify-between rounded-2xl border px-4 py-3 text-sm bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white font-bold transition-all hover:border-orange-400">{formDate.toLocaleDateString('pt-BR')}</button>
+                    {isDatePickerOpen && <DatePicker />}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-xs font-bold text-gray-400">R$</span>
+                      <input type="text" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-orange-400" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label>
+                  <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-orange-400" required />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Categoria</label>
+                    <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-orange-400">
+                      {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                   </div>
+                   <div>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Projeto</label>
+                    <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-orange-400">
+                      <option value="">Sem Projeto</option>
+                      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      <option value="custom">Outro</option>
+                    </select>
+                   </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={resetForm} className="flex-1 py-4 bg-gray-100 dark:bg-slate-700 text-gray-500 font-black rounded-2xl uppercase text-xs tracking-widest">Cancelar</button>
+                  <button type="submit" className="flex-[2] py-4 bg-orange-500 text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-lg shadow-orange-200 dark:shadow-none hover:bg-orange-600 transition-all">Salvar Alterações</button>
+                </div>
+              </form>
+           </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in-up pb-12 px-2 sm:px-0">
+      <EditModal />
+
       <div className={`mb-8 border-l-8 ${themeBorder} bg-white dark:bg-slate-800 rounded-r-3xl shadow-sm p-6 flex flex-col md:flex-row justify-between items-center gap-6`}>
         <div><h2 className={`text-3xl font-black ${themeText} tracking-tighter uppercase`}>DIÁRIO: {viewContext === 'PF' ? 'PESSOAL' : 'EMPRESA'}</h2><p className="text-sm text-gray-500 mt-1 font-bold tracking-widest opacity-60 uppercase">Controle de Lançamentos</p></div>
         <div className="w-full sm:w-auto relative" ref={monthPickerRef}>
@@ -275,10 +336,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 space-y-6">
-          <div id="transaction-form" className={`bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl p-8 border-t-8 ${themeBorder} relative overflow-hidden transition-all duration-300 ${editId ? 'ring-4 ring-orange-200 ring-opacity-50 border-orange-400' : ''}`}>
+          <div className={`bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl p-8 border-t-8 ${themeBorder} relative overflow-hidden`}>
             <div className="flex justify-between items-center mb-6 border-b pb-4">
-                <h3 className="text-xl font-black text-gray-800 dark:text-white uppercase">{editId ? 'Atualizar Item' : 'Novo Registro'}</h3>
-                {editId && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Editando</span>}
+                <h3 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">Novo Registro</h3>
+                <span className={`w-3 h-3 rounded-full animate-pulse ${viewContext === 'PF' ? 'bg-govgreen' : 'bg-govblue'}`}></span>
             </div>
             
             <form onSubmit={handleSaveTransaction} className="space-y-5">
@@ -288,19 +349,19 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 {isDatePickerOpen && <DatePicker />}
               </div>
               
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Pagamento Cachê Show" className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-medium" required /></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Descrição</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Pagamento Cachê Show" className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-medium outline-none focus:ring-2 focus:ring-govblue" required /></div>
               
               <div>
                 <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Valor (R$)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-3.5 text-xs font-bold text-gray-400">R$</span>
-                  <input type="text" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" className="w-full pl-10 pr-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-900 dark:text-white font-black" required />
+                  <input type="text" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" className="w-full pl-10 pr-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-govblue" required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4"><button type="button" onClick={() => setType('inflow')} className={`py-3 text-xs font-black rounded-2xl border-2 transition-all ${type === 'inflow' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 opacity-60'}`}>ENTRADA</button><button type="button" onClick={() => setType('outflow')} className={`py-3 text-xs font-black rounded-2xl border-2 transition-all ${type === 'outflow' ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 opacity-60'}`}>SAÍDA</button></div>
               
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Vincular Projeto</label><select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white"><option value="">Sem Projeto / Administrativo</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="custom">Outro (Digitar Nome)</option></select></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Vincular Projeto</label><select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-govblue"><option value="">Sem Projeto / Administrativo</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="custom">Outro (Digitar Nome)</option></select></div>
               
               {selectedProjectId === 'custom' && (
                   <input type="text" value={customProjectName} onChange={e => setCustomProjectName(e.target.value)} placeholder="Nome do Projeto Especial" className="w-full rounded-xl border px-4 py-2 text-xs bg-gray-50 dark:bg-slate-900 dark:text-white mt-1" />
@@ -313,23 +374,10 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                   </div>
               )}
 
-              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Categoria</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white">{availableCategories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-widest">Categoria</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-2xl border px-4 py-3 text-sm bg-white dark:bg-slate-900 dark:text-white font-bold">{availableCategories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
 
-              {isServiceCategory && (
-                  <div className="p-4 bg-orange-50 dark:bg-orange-900/10 rounded-2xl border-2 border-orange-200 dark:border-orange-800 animate-fade-in">
-                      <label className="flex items-center gap-3 cursor-pointer mb-3">
-                          <input type="checkbox" checked={hasInvoice} onChange={(e) => setHasInvoice(e.target.checked)} className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500" />
-                          <span className="text-xs font-black text-orange-800 dark:text-orange-400 uppercase">Documento Fiscal Emitido?</span>
-                      </label>
-                      {hasInvoice && <input type="text" value={paymentDoc} onChange={(e) => setPaymentDoc(e.target.value)} placeholder="Nº da Nota Fiscal" className="w-full px-4 py-2 text-xs rounded-xl border-2 border-orange-200 bg-white dark:bg-slate-900 dark:text-white outline-none" />}
-                  </div>
-              )}
-
-              <div className="pt-2 space-y-3">
-                  <button type="submit" className={`w-full py-4 px-4 rounded-2xl shadow-xl text-sm font-black text-white uppercase tracking-widest transform transition-transform active:scale-95 ${themeButton}`}>{editId ? 'Salvar Alterações' : '+ Adicionar no Diário'}</button>
-                  {editId && (
-                      <button type="button" onClick={() => { setEditId(null); setDescription(''); setAmount(''); setHasInvoice(false); setFormDate(new Date()); }} className="w-full text-[10px] font-black text-gray-500 hover:text-red-500 uppercase tracking-widest text-center">Cancelar e Limpar</button>
-                  )}
+              <div className="pt-2">
+                  <button type="submit" className={`w-full py-4 px-4 rounded-2xl shadow-xl text-sm font-black text-white uppercase tracking-widest transform transition-transform active:scale-95 ${themeButton}`}>+ Adicionar no Diário</button>
               </div>
             </form>
           </div>
@@ -351,13 +399,13 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 {sortedTransactions.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center p-12 text-center text-gray-400 space-y-4">
                         <span className="text-5xl">📅</span>
-                        <div><p className="text-sm font-black uppercase tracking-widest">Nenhum lançamento</p><p className="text-xs">Inicie o registro do seu mês no formulário ao lado.</p></div>
+                        <div><p className="text-sm font-black uppercase tracking-widest">Nenhum lançamento</p><p className="text-xs font-medium">Inicie o registro do seu mês no formulário ao lado.</p></div>
                     </div>
                 ) : (
                     <table className="w-full text-left">
                         <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm z-10"><tr className="text-[10px] font-black text-gray-400 uppercase border-b"><th className="px-8 py-4">Data</th><th className="px-4 py-4">Descrição & Projeto</th><th className="px-8 py-4 text-right">Valor</th><th className="px-6 py-4 text-center">Ações</th></tr></thead>
                         <tbody className="divide-y">{visibleTransactions.map(t => (
-                            <tr key={t.id} className={`transition-all hover:bg-gray-50 dark:hover:bg-slate-700/50 group ${editId === t.id ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}>
+                            <tr key={t.id} className={`transition-all hover:bg-gray-50 dark:hover:bg-slate-700/50 group`}>
                                 <td className="px-8 py-5 text-xs font-black text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
                                     {new Date(t.date).getDate().toString().padStart(2, '0')}/{MONTHS[new Date(t.date).getMonth()].substring(0,3)}
                                 </td>
@@ -366,17 +414,32 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                                     <div className="text-[10px] font-bold text-gray-400 uppercase mt-0.5 flex items-center gap-2">
                                         <span className="bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[9px]">{t.category}</span>
                                         {t.project && <span className="text-govblue dark:text-blue-400 truncate max-w-[150px]">#{t.project}</span>}
-                                        {t.paymentDoc && <span className="text-emerald-500">NF: {t.paymentDoc}</span>}
                                     </div>
                                 </td>
                                 <td className={`px-8 py-5 text-right font-black text-sm ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
                                     {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                                 </td>
-                                <td className="px-6 py-5 text-center">
-                                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => handleEditClick(t)} className="p-2 bg-blue-50 dark:bg-slate-700 rounded-lg text-govblue dark:text-blue-400 hover:bg-govblue hover:text-white transition-all shadow-sm" title="Editar Lançamento">✏️</button>
-                                        <button onClick={() => handleDuplicateClick(t)} className="p-2 bg-emerald-50 dark:bg-slate-700 rounded-lg text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Duplicar">📑</button>
-                                        <button onClick={() => onDeleteTransaction?.(t.id)} className="p-2 bg-red-50 dark:bg-slate-700 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm" title="Excluir">🗑️</button>
+                                <td className="px-6 py-5 text-center min-w-[160px]">
+                                    <div className="flex items-center justify-center gap-2 transition-opacity">
+                                        {deletingId === t.id ? (
+                                            <div className="flex items-center gap-1 bg-red-50 dark:bg-red-900/30 p-1 rounded-xl border border-red-200 dark:border-red-800 animate-fade-in">
+                                                <span className="text-[9px] font-black text-red-600 px-2 uppercase">Excluir?</span>
+                                                <button onClick={() => { onDeleteTransaction?.(t.id); setDeletingId(null); }} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-red-700 transition-colors">SIM</button>
+                                                <button onClick={() => setDeletingId(null)} className="bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-gray-200 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-gray-300 transition-colors">NÃO</button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleEditClick(t)} className="p-2.5 bg-blue-50 dark:bg-slate-700 rounded-xl text-govblue dark:text-blue-400 hover:bg-govblue hover:text-white transition-all shadow-sm" title="Editar Lançamento">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                </button>
+                                                <button onClick={() => handleDuplicateClick(t)} className="p-2.5 bg-emerald-50 dark:bg-slate-700 rounded-xl text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Duplicar">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                                                </button>
+                                                <button onClick={() => setDeletingId(t.id)} className="p-2.5 bg-red-50 dark:bg-slate-700 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm" title="Excluir">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
