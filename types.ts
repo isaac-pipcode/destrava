@@ -64,7 +64,20 @@ export interface BusinessProfile {
   regime: 'MEI' | 'ME';
   mainCnae?: Cnae;
   secondaryCnaes: Cnae[];
-  lastPayrollTotal?: number; // Para cálculo de Fator R (ME)
+  lastPayrollTotal?: number; 
+}
+
+export interface SimulatedInvoice {
+  id: string;
+  date: string;
+  customerName: string;
+  customerDoc: string;
+  serviceDescription: string;
+  amount: number;
+  taxTotal: number;
+  netValue: number;
+  cnae: string;
+  status: 'draft' | 'issued';
 }
 
 export interface Transaction {
@@ -82,11 +95,9 @@ export interface Transaction {
   paymentDoc?: string; 
   isRecurring?: boolean; 
   relatedId?: string; 
-  
   budgetLineId?: string; 
   projectStage?: ProjectStage;
   projectNature?: ExpenseNature;
-  
   accountId?: string;
 }
 

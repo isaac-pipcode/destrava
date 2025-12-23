@@ -12,7 +12,7 @@ import Documentation from './components/Documentation';
 import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
-import { Transaction, ProjectMetadata, BankAccount, BusinessProfile } from './types';
+import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
 
@@ -32,7 +32,6 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
   
-  // State for invoice simulation pre-load
   const [activeInvoiceTransactionId, setActiveInvoiceTransactionId] = useState<string | undefined>(undefined);
   
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
@@ -48,6 +47,11 @@ const App: React.FC = () => {
   const [accounts, setAccounts] = useState<BankAccount[]>(() => {
     const saved = localStorage.getItem('app_accounts');
     return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
+  });
+
+  const [invoices, setInvoices] = useState<SimulatedInvoice[]>(() => {
+    const saved = localStorage.getItem('app_invoices');
+    return saved ? JSON.parse(saved) : [];
   });
   
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
@@ -75,6 +79,7 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('app_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('app_projects', JSON.stringify(projects)); }, [projects]);
   useEffect(() => { localStorage.setItem('app_accounts', JSON.stringify(accounts)); }, [accounts]);
+  useEffect(() => { localStorage.setItem('app_invoices', JSON.stringify(invoices)); }, [invoices]);
   useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(customCategories)); }, [customCategories]);
   useEffect(() => { localStorage.setItem('app_business_profile', JSON.stringify(businessProfile)); }, [businessProfile]);
 
@@ -96,71 +101,27 @@ const App: React.FC = () => {
     setCurrentView('dashboard');
   };
 
-  const handleSaveProject = (project: ProjectMetadata) => {
-    setProjects(prev => {
-      const exists = prev.some(p => p.id === project.id);
-      if (exists) return prev.map(p => p.id === project.id ? project : p);
-      return [...prev, project];
-    });
+  const handleSaveInvoice = (invoice: SimulatedInvoice) => {
+    setInvoices(prev => [invoice, ...prev]);
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const handleDeleteInvoice = (id: string) => {
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
   };
-
-  const handleGenerateInvoice = (id: string) => {
-      setActiveInvoiceTransactionId(id);
-      setCurrentView('tax');
-  };
-
-  const generateRobustDemoData = useCallback(() => {
-      if (window.confirm("Isso carregará um cenário de demonstração completo e substituirá os dados atuais. Continuar?")) {
-        try {
-            const today = new Date();
-            const months = [new Date(today.getFullYear(), today.getMonth() - 1, 1), today];
-            const getMonthName = (d: Date) => d.toLocaleString('pt-BR', { month: 'long' }).charAt(0).toUpperCase() + d.toLocaleString('pt-BR', { month: 'long' }).slice(1);
-            const projId = "proj-demo-01";
-            
-            const demoProject: ProjectMetadata = {
-                id: projId,
-                name: "Documentário: Vozes da Terra",
-                legislation: "LPG",
-                budget: 50000,
-                startDate: months[0].toISOString(),
-                origin: "manual",
-                proponentDoc: "12.345.678/0001-99",
-                budgetLines: [
-                    { id: "line-01", activity: "Captação", expenseItem: "Câmera", stage: "Produção", nature: "Bens Duráveis/Equipamentos", plannedAmount: 15000 },
-                    { id: "line-02", activity: "Direção", expenseItem: "Cachê Diretor", stage: "Pré-Produção", nature: "Cachê", plannedAmount: 10000 }
-                ]
-            };
-
-            const demoTransactions: Transaction[] = [
-                { id: generateId(), description: "Recebimento LPG Parcela 1", amount: 25000, type: 'inflow', category: "Edital/Lei de Incentivo", date: months[0].toISOString(), month: getMonthName(months[0]), entity: 'PJ', projectId: projId, project: demoProject.name },
-                { id: generateId(), description: "Serviço Consultoria Técnica", amount: 4500, type: 'inflow', category: "Cachê Artístico/Serviço", date: today.toISOString(), month: getMonthName(today), entity: 'PJ', paymentDoc: '' } // PENDING NF
-            ];
-
-            setProjects([demoProject]);
-            setTransactions(demoTransactions);
-            alert("Dados de demonstração carregados!");
-            setCurrentView('dashboard');
-        } catch (e) { console.error(e); }
-      }
-  }, []);
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
-      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={handleGenerateInvoice} />;
+      case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
+      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
       case 'reports': return <Reports transactions={transactions} />;
-      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} onEditTransaction={(id) => { const t = transactions.find(tx => tx.id === id); if(t) { setCurrentView(t.entity === 'PJ' ? 'manual_pj' : 'manual_pf'); } }} onDeleteTransaction={handleDeleteTransaction} />;
-      case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view as any)} businessProfile={businessProfile} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} />;
+      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} />;
+      case 'tax': return <TaxManager transactions={transactions} businessProfile={businessProfile} accounts={accounts} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} onSaveInvoice={handleSaveInvoice} invoices={invoices} onDeleteInvoice={handleDeleteInvoice} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;
       case 'branding': return <BrandingTool />;
       case 'import': return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
-      default: return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
+      default: return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
     }
   };
 
