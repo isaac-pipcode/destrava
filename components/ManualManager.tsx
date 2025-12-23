@@ -37,6 +37,7 @@ export const maskCpfCnpj = (value: string) => {
 interface ManualManagerProps {
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  onDeleteTransaction?: (id: string) => void;
   viewContext: 'PF' | 'PJ';
   customCategories: string[];
   onAddCategory: (category: string) => void;
@@ -46,7 +47,7 @@ interface ManualManagerProps {
 }
 
 const ManualManager: React.FC<ManualManagerProps> = ({ 
-    transactions, setTransactions, viewContext, customCategories, onAddCategory, 
+    transactions, setTransactions, onDeleteTransaction, viewContext, customCategories, onAddCategory, 
     projects = [], accounts = [], onAddAccount 
 }) => {
   const today = new Date();
@@ -75,7 +76,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
-  const [hasInvoice, setHasInvoice] = useState(false); // New state for fiscal compliance
+  const [hasInvoice, setHasInvoice] = useState(false); 
   const [editId, setEditId] = useState<string | null>(null);
 
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
@@ -150,7 +151,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
         project: finalProjectName,
         projectId: selectedProjectId !== 'custom' && selectedProjectId !== '' ? selectedProjectId : undefined,
         supplierDoc,
-        paymentDoc: hasInvoice ? paymentDoc : '', // Explicitly clear if not marked as having invoice
+        paymentDoc: hasInvoice ? paymentDoc : '',
         date: formDate.toISOString(),
         month: MONTHS[formDate.getMonth()],
         entity: viewContext,
@@ -166,7 +167,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
     setSelectedMonth(MONTHS[formDate.getMonth()]);
     setSelectedYear(formDate.getFullYear());
 
-    // Reset Form
     setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false);
     setFormDate(new Date());
   };
@@ -304,7 +304,6 @@ const ManualManager: React.FC<ManualManagerProps> = ({
                 </select>
               </div>
 
-              {/* DYNAMIC FISCAL COMPLIANCE SECTION */}
               {isServiceCategory && (
                   <div className="p-5 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border-2 border-orange-200 dark:border-orange-800 animate-fade-in">
                       <div className="flex items-center gap-2 mb-3">
@@ -359,8 +358,8 @@ const ManualManager: React.FC<ManualManagerProps> = ({
             <div className="flex-grow overflow-y-auto custom-scroll">
                 {sortedTransactions.length === 0 ? (<div className="h-full flex flex-col items-center justify-center p-12 text-center opacity-40">📂<p className="text-sm font-bold uppercase tracking-widest">Nenhum registro</p></div>) : (
                     <table className="w-full text-left">
-                        <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm z-10"><tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b"><th className="px-8 py-4">DIA</th><th className="px-4 py-4">DESCRIÇÃO</th><th className="px-8 py-4 text-right">VALOR</th></tr></thead>
-                        <tbody className="divide-y">{visibleTransactions.map(t => (<tr key={t.id} onClick={() => handleEditClick(t)} className={`cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700/50 group ${editId === t.id ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}><td className="px-8 py-5 text-xs font-black text-gray-300 group-hover:text-govblue">{new Date(t.date).getDate().toString().padStart(2, '0')}</td><td className="px-4 py-5"><div className="text-sm font-black text-gray-800 dark:text-gray-200">{t.description}</div><div className="text-[10px] font-bold text-gray-400 uppercase">{t.category} {t.project && <span className="opacity-40 ml-1">• {t.project}</span>}</div></td><td className={`px-8 py-5 text-right font-black text-sm ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>{t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}</td></tr>))}</tbody>
+                        <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm z-10"><tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b"><th className="px-8 py-4">DIA</th><th className="px-4 py-4">DESCRIÇÃO</th><th className="px-8 py-4 text-right">VALOR</th><th className="px-4 py-4"></th></tr></thead>
+                        <tbody className="divide-y">{visibleTransactions.map(t => (<tr key={t.id} className={`transition-all hover:bg-gray-50 dark:hover:bg-slate-700/50 group ${editId === t.id ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}><td onClick={() => handleEditClick(t)} className="px-8 py-5 text-xs font-black text-gray-300 group-hover:text-govblue cursor-pointer">{new Date(t.date).getDate().toString().padStart(2, '0')}</td><td onClick={() => handleEditClick(t)} className="px-4 py-5 cursor-pointer"><div className="text-sm font-black text-gray-800 dark:text-gray-200">{t.description}</div><div className="text-[10px] font-bold text-gray-400 uppercase">{t.category} {t.project && <span className="opacity-40 ml-1">• {t.project}</span>}</div></td><td onClick={() => handleEditClick(t)} className={`px-8 py-5 text-right font-black text-sm cursor-pointer ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>{t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}</td><td className="px-4 py-5 text-right"><button onClick={(e) => { e.stopPropagation(); onDeleteTransaction?.(t.id); }} className="p-2 text-gray-300 hover:text-red-500 transition-colors">🗑️</button></td></tr>))}</tbody>
                     </table>
                 )}
             </div>

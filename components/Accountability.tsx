@@ -12,6 +12,8 @@ interface AccountabilityProps {
   transactions: Transaction[];
   projects: ProjectMetadata[];
   onSaveProject: (project: ProjectMetadata) => void;
+  onDeleteTransaction?: (id: string) => void;
+  onEditTransaction?: (id: string) => void;
 }
 
 const COLORS = ['#1351b4', '#009a44', '#f37021', '#475569', '#94a3b8', '#e2e8f0'];
@@ -21,10 +23,10 @@ const isValidCpfCnpj = (val: string): boolean => {
     const clean = val.replace(/\D/g, '');
     if (clean.length !== 11 && clean.length !== 14) return false;
     if (/^(\d)\1+$/.test(clean)) return false;
-    return true; // Simplified for core logic review
+    return true;
 };
 
-const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onSaveProject }) => {
+const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects, onSaveProject, onDeleteTransaction, onEditTransaction }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'report' | 'guide'>('dashboard');
   const [viewMode, setViewMode] = useState<'select' | 'register' | 'import'>('select');
@@ -65,15 +67,6 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
   const totalExecuted = projectTransactions.reduce((acc, t) => t.type === 'outflow' ? acc + t.amount : acc, 0);
   const totalInflowRealized = projectTransactions.reduce((acc, t) => t.type === 'inflow' ? acc + t.amount : acc, 0);
   const balance = totalInflowRealized - totalExecuted;
-
-  const stageData = useMemo(() => {
-    const grouped: Record<string, number> = {};
-    projectTransactions.filter(t => t.type === 'outflow').forEach(t => {
-      const stage = t.projectStage || 'Não Classificado';
-      grouped[stage] = (grouped[stage] || 0) + t.amount;
-    });
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [projectTransactions]);
 
   const handleSaveProjectInternal = (e: React.FormEvent) => {
       e.preventDefault();
@@ -161,9 +154,9 @@ const Accountability: React.FC<AccountabilityProps> = ({ transactions, projects,
             {activeTab === 'report' && (
                 <div className="animate-fade-in bg-white dark:bg-slate-800 rounded-2xl shadow-sm border overflow-hidden">
                     <table className="min-w-full text-xs text-left">
-                        <thead className="bg-gray-100 uppercase font-black text-gray-400"><tr className="border-b"><th className="px-6 py-4">Data</th><th className="px-6 py-4">Rubrica</th><th className="px-6 py-4">Fornecedor</th><th className="px-6 py-4 text-right">Valor Pago</th></tr></thead>
+                        <thead className="bg-gray-100 uppercase font-black text-gray-400"><tr className="border-b"><th className="px-6 py-4">Data</th><th className="px-6 py-4">Rubrica</th><th className="px-6 py-4">Fornecedor / Detalhe</th><th className="px-6 py-4 text-right">Valor Pago</th><th className="px-6 py-4 text-right">Ações</th></tr></thead>
                         <tbody className="divide-y">{projectTransactions.filter(t => t.type === 'outflow').map(t => (
-                            <tr key={t.id} className="hover:bg-gray-50"><td className="px-6 py-4">{new Date(t.date).toLocaleDateString()}</td><td className="px-6 py-4 font-bold">{activeProjectData.budgetLines?.find(l => l.id === t.budgetLineId)?.expenseItem || 'Geral'}</td><td className="px-6 py-4">{t.description}</td><td className="px-6 py-4 text-right font-bold text-red-500">{formatCurrency(t.amount)}</td></tr>
+                            <tr key={t.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4">{new Date(t.date).toLocaleDateString()}</td><td className="px-6 py-4 font-bold">{activeProjectData.budgetLines?.find(l => l.id === t.budgetLineId)?.expenseItem || 'Geral'}</td><td className="px-6 py-4">{t.description}</td><td className="px-6 py-4 text-right font-bold text-red-500">{formatCurrency(t.amount)}</td><td className="px-6 py-4 text-right flex justify-end gap-2"><button onClick={() => onEditTransaction?.(t.id)} className="p-1.5 hover:bg-blue-100 rounded text-govblue" title="Editar">✏️</button><button onClick={() => onDeleteTransaction?.(t.id)} className="p-1.5 hover:bg-red-100 rounded text-red-500" title="Excluir">🗑️</button></td></tr>
                         ))}</tbody>
                     </table>
                 </div>

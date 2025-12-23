@@ -95,6 +95,12 @@ const App: React.FC = () => {
     });
   };
 
+  const handleDeleteTransaction = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este lançamento?")) {
+        setTransactions(prev => prev.filter(t => t.id !== id));
+    }
+  };
+
   const generateRobustDemoData = useCallback(() => {
       if (window.confirm("Isso carregará um cenário de demonstração completo e substituirá os dados atuais. Continuar?")) {
         try {
@@ -133,10 +139,10 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
-      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
       case 'reports': return <Reports transactions={transactions} />;
-      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} />;
+      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} onEditTransaction={(id) => { const t = transactions.find(tx => tx.id === id); if(t) { setCurrentView(t.entity === 'PJ' ? 'manual_pj' : 'manual_pf'); /* The logic for edit mode would need state injection or we just jump to the manual manager where the item will be sorted by date */ } }} onDeleteTransaction={handleDeleteTransaction} />;
       case 'tax': return <TaxManager transactions={transactions} setTransactions={setTransactions} onNavigate={(view) => setCurrentView(view)} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;

@@ -4,7 +4,7 @@ import { Transaction } from '../types';
 
 interface TaxManagerProps {
   transactions: Transaction[];
-  setTransactions?: React.Dispatch<React.SetStateAction<Transaction[]>>; // Added setter to update transactions
+  setTransactions?: React.Dispatch<React.SetStateAction<Transaction[]>>;
   onNavigate: (view: 'manual_pj') => void;
 }
 
@@ -25,6 +25,9 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
   // Quick fix state
   const [solvingId, setSolvingId] = useState<string | null>(null);
   const [quickNf, setQuickNf] = useState('');
+
+  // Monthly Detail View State
+  const [selectedTaxMonth, setSelectedTaxMonth] = useState<string | null>(null);
 
   const revenuePJ = useMemo(() => {
     return transactions
@@ -57,6 +60,11 @@ const TaxManager: React.FC<TaxManagerProps> = ({ transactions, setTransactions, 
     
     return status;
   }, [transactions, currentYear]);
+
+  const monthTransactions = useMemo(() => {
+      if (!selectedTaxMonth) return [];
+      return transactions.filter(t => t.entity === 'PJ' && t.month === selectedTaxMonth && new Date(t.date).getFullYear() === currentYear);
+  }, [transactions, selectedTaxMonth, currentYear]);
 
   const handleQuickResolve = (id: string) => {
       if (!setTransactions || !quickNf) return;
@@ -115,29 +123,102 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><span>🗓️</span> Controle do DAS</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2"><span>🗓️</span> Controle do DAS <span className="text-[10px] font-normal text-gray-400 uppercase ml-2">(Clique no mês para ver detalhes)</span></h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {MONTHS.map((m, idx) => {
                     const isPaid = dasStatus[m];
                     const isFuture = idx > new Date().getMonth();
+                    const isSelected = selectedTaxMonth === m;
                     return (
-                        <div key={m} className={`p-2 rounded-lg border text-center ${isPaid ? 'bg-green-50 dark:bg-green-900/20 border-green-200' : isFuture ? 'bg-gray-50 dark:bg-slate-700 opacity-50' : 'bg-red-50 dark:bg-red-900/20 border-red-200'}`}>
+                        <button 
+                            key={m} 
+                            onClick={() => setSelectedTaxMonth(isSelected ? null : m)}
+                            className={`p-2 rounded-lg border text-center transition-all transform active:scale-95 ${isSelected ? 'ring-4 ring-govblue border-govblue' : ''} ${isPaid ? 'bg-green-50 dark:bg-green-900/20 border-green-200' : isFuture ? 'bg-gray-50 dark:bg-slate-700 opacity-50' : 'bg-red-50 dark:bg-red-900/20 border-red-200'}`}
+                        >
                             <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">{m.substring(0,3)}</p>
                             {isPaid ? <span className="text-lg">✅</span> : isFuture ? <span className="text-gray-300">-</span> : <span className="text-lg">❌</span>}
-                        </div>
+                        </button>
                     )
                 })}
             </div>
         </div>
       </div>
 
+      {/* MONTHLY DETAIL DRAWER */}
+      {selectedTaxMonth && (
+          <div className="mb-8 p-6 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border-2 border-govblue animate-fade-in-up">
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                  <div>
+                    <h3 className="text-xl font-black text-govblue uppercase tracking-tight">Detalhamento: {selectedTaxMonth}</h3>
+                    <p className="text-xs font-bold text-gray-400">CONFORMIDADE DE NOTAS FISCAIS</p>
+                  </div>
+                  <button onClick={() => setSelectedTaxMonth(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl">×</button>
+              </div>
+              
+              <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                      <thead>
+                          <tr className="text-[10px] font-black text-gray-400 uppercase border-b">
+                              <th className="px-4 py-3">Descrição / Fornecedor</th>
+                              <th className="px-4 py-3">Categoria</th>
+                              <th className="px-4 py-3 text-right">Valor</th>
+                              <th className="px-4 py-3 text-center">NF-e</th>
+                              <th className="px-4 py-3 text-right">Ação</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                          {monthTransactions.length === 0 ? (
+                              <tr><td colSpan={5} className="py-8 text-center text-gray-400 italic">Nenhuma transação PJ registrada neste mês.</td></tr>
+                          ) : (
+                              monthTransactions.map(t => (
+                                  <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                                      <td className="px-4 py-4">
+                                          <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{t.description}</p>
+                                          <p className="text-[10px] text-gray-400">{t.project || 'Geral'}</p>
+                                      </td>
+                                      <td className="px-4 py-4 text-xs text-gray-500">{t.category}</td>
+                                      <td className={`px-4 py-4 text-right font-bold text-sm ${t.type === 'inflow' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                          {formatCurrency(t.amount)}
+                                      </td>
+                                      <td className="px-4 py-4 text-center">
+                                          {t.paymentDoc ? (
+                                              <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-md">NF: {t.paymentDoc}</span>
+                                          ) : (
+                                              <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-md">PENDENTE</span>
+                                          )}
+                                      </td>
+                                      <td className="px-4 py-4 text-right">
+                                          {solvingId === t.id ? (
+                                              <div className="flex gap-1 justify-end">
+                                                  <input 
+                                                    type="text" 
+                                                    value={quickNf} 
+                                                    onChange={e => setQuickNf(e.target.value)}
+                                                    className="w-20 px-2 py-1 text-[10px] border-2 border-govblue rounded"
+                                                    placeholder="Nº Nota"
+                                                  />
+                                                  <button onClick={() => handleQuickResolve(t.id)} className="bg-govblue text-white px-2 py-1 rounded text-[10px]">OK</button>
+                                              </div>
+                                          ) : (
+                                              <button onClick={() => setSolvingId(t.id)} className="text-govblue hover:underline text-[10px] font-bold">Editar NF</button>
+                                          )}
+                                      </td>
+                                  </tr>
+                              ))
+                          )}
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
               <h3 className="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2">
-                  <span>⚠️</span> Receitas sem Nota Fiscal
+                  <span>⚠️</span> Pendências Fiscais Globais
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium italic">
-                  O sistema identificou estes serviços realizados que ainda não possuem registro de Nota Fiscal (NF-e).
+                  Serviços recebidos que ainda não possuem registro de Nota Fiscal (NF-e).
               </p>
 
               {pendingInvoices.length === 0 ? (
@@ -151,7 +232,7 @@ Declaro que sou optante pelo Simples Nacional (MEI), não gerando direito a cré
                               <div className="flex justify-between items-start mb-3">
                                   <div>
                                       <p className="font-black text-gray-800 dark:text-gray-200 text-sm">{t.description}</p>
-                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{new Date(t.date).toLocaleDateString()} • {t.project || 'Geral'}</p>
+                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{new Date(t.date).toLocaleDateString()} • {t.month} • {t.project || 'Geral'}</p>
                                   </div>
                                   <div className="text-right">
                                       <p className="font-black text-govblue dark:text-blue-400 text-sm">{formatCurrency(t.amount)}</p>
