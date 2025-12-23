@@ -10,51 +10,45 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
   const sizes = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
-    lg: 'w-16 h-16',
-    xl: 'w-24 h-24'
+    lg: 'w-20 h-20',
+    xl: 'w-32 h-32'
   };
 
   return (
-    <div className={`${sizes[size]} ${className} relative flex items-center justify-center`}>
-      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-sm">
-        {/* Haste do Cadeado (Azul Gov) - Geometria Original e Simétrica */}
+    <div className={`${sizes[size]} ${className} relative flex items-center justify-center transition-transform duration-300`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+        {/* Haste do Cadeado - Aberta no lado direito (Navy Blue) */}
         <path 
-          d="M30 42V32C30 20.9543 38.9543 12 50 12C61.0457 12 70 20.9543 70 32V42" 
-          stroke="#1351b4" 
-          strokeWidth="10" 
+          d="M30 44V32C30 20.9543 38.9543 12 50 12C61.0457 12 70 20.9543 70 32V38" 
+          stroke="#1d357d" 
+          strokeWidth="11" 
           strokeLinecap="round"
-          className="stroke-govblue"
         />
         
-        {/* Corpo do Cadeado - Design Flat com Cores do Mapa Cultural */}
-        {/* Parte Verde (Superior Esquerda) */}
-        <path 
-          d="M20 52C20 47.5817 23.5817 44 28 44H72C76.4183 44 80 47.5817 80 52V82C80 86.4183 76.4183 90 72 90H28C23.5817 90 20 86.4183 20 82V52Z" 
-          fill="#009a44" 
-          className="fill-govgreen"
-        />
-        
-        {/* Parte Laranja (Corte Diagonal Inferior Direito) */}
-        <path 
-          d="M80 44L20 90H72C76.4183 90 80 86.4183 80 82V44Z" 
-          fill="#f37021" 
-          className="fill-govorange"
-        />
+        {/* Corpo do Cadeado com Cantos Arredondados */}
+        <mask id="bodyMask">
+          <rect x="20" y="44" width="60" height="46" rx="8" fill="white" />
+        </mask>
 
-        {/* Símbolo do Cifrão ($) - Centralizado e Branco */}
-        <g transform="translate(50, 67) scale(0.9)">
-            {/* Traço vertical central */}
-            <rect x="-1.5" y="-18" width="3" height="36" rx="1.5" fill="white" />
-            
-            {/* Curvas do S */}
-            <path 
-              d="M7.5 -10C7.5 -10 7 -14 -2 -14C-11 -14 -11 -6 -2 -6C7 -6 7 2 -2 2C-11 2 -11 10 -2 10C7 10 7.5 6 7.5 6" 
-              stroke="white" 
-              strokeWidth="5.5" 
-              strokeLinecap="round" 
-              fill="none" 
-            />
+        <g mask="url(#bodyMask)">
+          {/* Parte Verde (Superior Esquerda) */}
+          <path 
+            d="M20 44H80V90H20V44Z" 
+            fill="#2e9e42" 
+          />
+          
+          {/* Parte Laranja (Divisão Diagonal Inferior Direita) */}
+          <path 
+            d="M85 44L20 95H85V44Z" 
+            fill="#f58220" 
+          />
         </g>
+
+        {/* Seta Branca Centralizada apontando para cima */}
+        <path 
+          d="M50 48L38 64H46V78H54V64H62L50 48Z" 
+          fill="white"
+        />
       </svg>
     </div>
   );
