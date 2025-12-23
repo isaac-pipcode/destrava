@@ -19,15 +19,15 @@ const PresentationModal: React.FC<PresentationModalProps> = ({ isOpen, onClose }
         <ul className="space-y-4 text-gray-600 dark:text-gray-300">
           <li className="flex gap-3">
             <span className="text-red-500 font-bold">✖</span>
-            <span><strong>Caos Financeiro:</strong> Mistura de contas PF (Pessoal) e PJ (Empresa), gerando descontrole.</span>
+            <span><strong>Caos Financeiro:</strong> Mistura de contas PF e PJ, gerando descontrole.</span>
           </li>
           <li className="flex gap-3">
             <span className="text-red-500 font-bold">✖</span>
-            <span><strong>Burocracia Cultural:</strong> Editais (LPG/PNAB) exigem controle rígido de rubricas que planilhas não entregam.</span>
+            <span><strong>Burocracia Cultural:</strong> Editais exigem controle rígido de rubricas.</span>
           </li>
           <li className="flex gap-3">
             <span className="text-red-500 font-bold">✖</span>
-            <span><strong>Risco Fiscal:</strong> Desconhecimento do teto MEI e falta de precificação correta geram dívidas.</span>
+            <span><strong>Risco de Glosa:</strong> Erros na prestação de contas forçam a devolução de recursos.</span>
           </li>
         </ul>
       )
@@ -38,64 +38,57 @@ const PresentationModal: React.FC<PresentationModalProps> = ({ isOpen, onClose }
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-300">
-            Um <strong>Sistema Operacional Financeiro</strong> desenhado para a Economia Criativa.
+            O primeiro <strong>Sistema Operacional Financeiro</strong> nativo para a Economia Criativa.
           </p>
           <div className="grid grid-cols-2 gap-4 mt-4">
              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <h4 className="font-bold text-govblue dark:text-blue-400 mb-1">Gestão Híbrida</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Visão unificada de PF e PJ sem misturar os caixas.</p>
+                <h4 className="font-bold text-govblue dark:text-blue-400 mb-1 text-sm">IA Financeira</h4>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Categorização automática de extratos bancários.</p>
              </div>
              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
-                <h4 className="font-bold text-govgreen dark:text-green-400 mb-1">Foco em Editais</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Prestação de contas nativa para leis de incentivo.</p>
+                <h4 className="font-bold text-govgreen dark:text-green-400 mb-1 text-sm">Conformidade</h4>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Prestação de contas formatada para LPG/PNAB.</p>
              </div>
           </div>
         </div>
       )
     },
     {
-      title: "Tecnologia & IA",
-      icon: "🤖",
+      title: "Proposta de Valor",
+      icon: "💎",
       content: (
-        <ul className="space-y-4 text-gray-600 dark:text-gray-300">
-          <li className="flex gap-3 items-center">
-            <span className="bg-purple-100 text-purple-600 p-1 rounded">Gemini 2.5</span>
-            <span>Leitura automática de extratos bancários (CSV/TXT).</span>
-          </li>
-          <li className="flex gap-3 items-center">
-            <span className="bg-blue-100 text-blue-600 p-1 rounded">React + Vite</span>
-            <span>Performance nativa, PWA-ready e escalável.</span>
-          </li>
-          <li className="flex gap-3 items-center">
-            <span className="bg-orange-100 text-orange-600 p-1 rounded">Segurança</span>
-            <span>Processamento local e arquitetura Serverless.</span>
-          </li>
-        </ul>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg font-bold text-xs">ROI</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Economia de <strong>20h/mês</strong> por produtor em tarefas burocráticas.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg font-bold text-xs">SEG</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Segurança contra multas e devolução de verbas de editais.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="bg-purple-100 text-purple-600 p-2 rounded-lg font-bold text-xs">DATA</div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Inteligência de dados sobre o mercado criativo do Brasil.</p>
+          </div>
+        </div>
       )
     },
     {
-      title: "Estágio Atual (MVP)",
-      icon: "🚀",
+      title: "Plano para 2.000 Usuários",
+      icon: "📈",
       content: (
-        <div className="grid grid-cols-2 gap-3 text-sm">
-           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-              <span className="text-green-500">✔</span> Dashboard Financeiro
-           </div>
-           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-              <span className="text-green-500">✔</span> Importação via IA
-           </div>
-           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-              <span className="text-green-500">✔</span> Prestação de Contas (LPG)
-           </div>
-           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-              <span className="text-green-500">✔</span> Controle Fiscal MEI
-           </div>
-           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-              <span className="text-green-500">✔</span> Precificação de Projetos
-           </div>
-           <div className="flex items-center gap-2 text-gray-400">
-              <span>⏳</span> Integração Bancária (Open Finance)
-           </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 text-[11px] mb-4">
+            <div className="bg-gray-100 dark:bg-slate-700 p-2 rounded"><strong>Infra:</strong> Serverless (Escala infinita)</div>
+            <div className="bg-gray-100 dark:bg-slate-700 p-2 rounded"><strong>Custo IA:</strong> $0.05 / usuário / mês</div>
+          </div>
+          <h4 className="text-xs font-bold uppercase text-gray-400">Passo a Passo:</h4>
+          <ol className="text-xs text-gray-600 dark:text-gray-300 space-y-2">
+            <li><strong>1. Centralização:</strong> Migração de dados locais para Cloud (Supabase).</li>
+            <li><strong>2. Segurança:</strong> Auditoria LGPD e criptografia de dados financeiros.</li>
+            <li><strong>3. Onboarding:</strong> Criação de Central de Ajuda e Tutoriais em vídeo.</li>
+            <li><strong>4. Expansão:</strong> Integração direta via Open Finance (Banco Central).</li>
+          </ol>
         </div>
       )
     }
@@ -108,8 +101,8 @@ const PresentationModal: React.FC<PresentationModalProps> = ({ isOpen, onClose }
         {/* Header */}
         <div className="bg-gradient-to-r from-govblue to-govgreen p-6 text-white flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-black tracking-tight">DESTRAVA <span className="font-light opacity-80">| Apresentação</span></h2>
-            <p className="text-xs opacity-90 mt-1">Pitch Deck Interativo</p>
+            <h2 className="text-2xl font-black tracking-tight uppercase">DESTRAVA <span className="font-light opacity-80">| Pitch</span></h2>
+            <p className="text-xs opacity-90 mt-1">Negociação de Parceria e Investimento</p>
           </div>
           <button onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -122,7 +115,7 @@ const PresentationModal: React.FC<PresentationModalProps> = ({ isOpen, onClose }
                 <span className="text-4xl">{slides[activeSlide].icon}</span>
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{slides[activeSlide].title}</h3>
             </div>
-            <div className="bg-gray-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 min-h-[200px] flex flex-col justify-center">
+            <div className="bg-gray-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 min-h-[220px] flex flex-col justify-center">
                 {slides[activeSlide].content}
             </div>
         </div>
