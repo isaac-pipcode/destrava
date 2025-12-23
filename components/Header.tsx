@@ -72,12 +72,13 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                 </div>
              </div>
 
-             {/* Desktop Navigation */}
+             {/* Desktop Navigation - Updated Labels & Order */}
              <nav className="hidden md:flex items-center space-x-1">
                 <button onClick={() => onNavigate('dashboard')} className={getLinkClass(currentView === 'dashboard')}>Painel</button>
+                
                 <div className="relative group" onMouseEnter={() => setIsDropdownOpen(true)} onMouseLeave={() => setIsDropdownOpen(false)}>
                   <button className={`flex items-center gap-1 ${getLinkClass(currentView.startsWith('manual'))}`}>
-                    Diário
+                    Diário Financeiro
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
                   {isDropdownOpen && (
@@ -87,11 +88,12 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                     </div>
                   )}
                 </div>
-                <button onClick={() => onNavigate('reports')} className={getLinkClass(currentView === 'reports')}>Relatórios</button>
-                <button onClick={() => onNavigate('accountability')} className={getLinkClass(currentView === 'accountability')}>Contas</button>
+
+                <button onClick={() => onNavigate('accountability')} className={getLinkClass(currentView === 'accountability')}>Gestão</button>
                 <button onClick={() => onNavigate('tax')} className={getLinkClass(currentView === 'tax')}>Fiscal</button>
-                <button onClick={() => onNavigate('pricing')} className={getLinkClass(currentView === 'pricing')}>Preço</button>
-                <button onClick={() => onNavigate('documentation')} className={getLinkClass(currentView === 'documentation')}>Doc</button>
+                <button onClick={() => onNavigate('pricing')} className={getLinkClass(currentView === 'pricing')}>Orçamento</button>
+                <button onClick={() => onNavigate('reports')} className={getLinkClass(currentView === 'reports')}>Relatórios</button>
+                <button onClick={() => onNavigate('documentation')} className={getLinkClass(currentView === 'documentation')}>Sobre</button>
              </nav>
           </div>
           
@@ -111,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                             <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">gov.br/artista</p>
                         </div>
                         <button onClick={() => { handleNav('branding'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium">Branding IA</button>
-                        <button onClick={() => { handleNav('documentation'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium">Documentação</button>
+                        <button onClick={() => { handleNav('documentation'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium">Sobre o Projeto</button>
                         <button onClick={onLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 font-bold flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             Sair
@@ -123,7 +125,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile Drawer Navigation - Updated Labels & Order */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -142,26 +144,32 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                     <button onClick={() => handleNav('dashboard')} className={getMobileLinkClass(currentView === 'dashboard')}>
                         <span>🏠</span> Painel Inicial
                     </button>
-                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Finanças Diárias</div>
+                    
+                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Finanças</div>
                     <button onClick={() => handleNav('manual_pj')} className={getMobileLinkClass(currentView === 'manual_pj')}>
-                        <span className="text-blue-400">🏢</span> Pessoa Jurídica
+                        <span className="text-blue-400">🏢</span> Diário (PJ)
                     </button>
                     <button onClick={() => handleNav('manual_pf')} className={getMobileLinkClass(currentView === 'manual_pf')}>
-                        <span className="text-govgreen">👤</span> Pessoa Física
+                        <span className="text-govgreen">👤</span> Diário (PF)
                     </button>
                     
-                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Gestão de Projetos</div>
+                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ferramentas</div>
                     <button onClick={() => handleNav('accountability')} className={getMobileLinkClass(currentView === 'accountability')}>
-                        <span>📑</span> Prestação de Contas
+                        <span>📑</span> Gestão & Contas
+                    </button>
+                    <button onClick={() => handleNav('tax')} className={getMobileLinkClass(currentView === 'tax')}>
+                        <span>🏛️</span> Fiscal
+                    </button>
+                    <button onClick={() => handleNav('pricing')} className={getMobileLinkClass(currentView === 'pricing')}>
+                        <span>💰</span> Orçamento
                     </button>
                     <button onClick={() => handleNav('reports')} className={getMobileLinkClass(currentView === 'reports')}>
                         <span>📊</span> Relatórios
                     </button>
-                    <button onClick={() => handleNav('tax')} className={getMobileLinkClass(currentView === 'tax')}>
-                        <span>🏛️</span> Fiscal & MEI
-                    </button>
-                    <button onClick={() => handleNav('pricing')} className={getMobileLinkClass(currentView === 'pricing')}>
-                        <span>💰</span> Precificação
+
+                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Informações</div>
+                    <button onClick={() => handleNav('documentation')} className={getMobileLinkClass(currentView === 'documentation')}>
+                        <span>📖</span> Sobre
                     </button>
                 </div>
 
