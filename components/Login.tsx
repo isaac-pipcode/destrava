@@ -62,7 +62,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-black text-gray-800 dark:text-white tracking-tighter">DESTRAVA</h1>
+            <h1 className="text-4xl font-black text-[#1d357d] dark:text-white tracking-tighter uppercase">Destrava</h1>
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
               Gestão inteligente para os trabalhadores da cultura
             </p>
@@ -91,11 +91,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
                {isLoading === 'google' ? 'Conectando...' : 'Entrar com Google'}
             </button>
 
-            {/* Gov.br Button */}
+            {/* Gov.br Button - Corrigido com Logo Visual Oficial */}
             <button 
               onClick={() => handleSimulatedLogin('gov')}
               disabled={!!isLoading}
-              className="w-full py-3 px-4 bg-[#1351b4] text-white rounded-full font-bold text-lg hover:bg-[#0c326f] transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group"
+              className="w-full py-3 px-4 bg-[#1351b4] text-white rounded-full font-bold text-lg hover:bg-[#0c326f] transition-all shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
             >
                {isLoading === 'gov' ? (
                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -104,8 +104,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
                  </svg>
                ) : (
                  <>
-                  <span>Entrar com</span>
-                  <span className="font-black italic font-serif text-xl group-hover:underline decoration-2 underline-offset-4">gov.br</span>
+                  <span className="text-sm uppercase tracking-wide opacity-90">Entrar com</span>
+                  <svg width="80" height="24" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 20C10 23.3137 7.31371 26 4 26C0.686292 26 -2 23.3137 -2 20C-2 16.6863 0.686292 14 4 14C7.31371 14 10 16.6863 10 20Z" fill="white" transform="translate(10,-5)"/>
+                    <path d="M16 14V26H21V14H16Z" fill="white" transform="translate(10,-5)"/>
+                    <path d="M25 14V26H30V14H25Z" fill="white" transform="translate(10,-5)"/>
+                    <path d="M40 14V26H35V14H40Z" fill="white" transform="translate(10,-5)"/>
+                    <circle cx="65" cy="15" r="2.5" fill="white" />
+                    <text x="70" y="21" fill="white" font-family="Arial, sans-serif" font-weight="900" font-size="18">br</text>
+                  </svg>
                  </>
                )}
             </button>
