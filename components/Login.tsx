@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import Logo from './Logo';
 
 interface LoginProps {
   onLogin: () => void;
@@ -55,16 +57,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
       <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border-t-8 border-govblue z-10 relative">
         <div className="p-8">
           
-          {/* Logo DESTRAVA Large */}
           <div className="flex justify-center mb-8">
-             <div className="relative w-16 h-16 flex items-center justify-center transform scale-110">
-                    {/* Lock Body */}
-                    <div className="absolute bottom-0 w-16 h-10 bg-govblue rounded-xl shadow-md z-10"></div>
-                    {/* Lock Shackle (Open) */}
-                    <div className="absolute -top-2 right-0 w-10 h-12 border-8 border-govgreen rounded-t-full transform translate-x-2 -translate-y-2"></div>
-                    {/* Keyhole */}
-                    <div className="absolute bottom-3 w-4 h-4 bg-govorange rounded-full z-20"></div>
-            </div>
+             <Logo size="xl" className="transform scale-110" />
           </div>
 
           <div className="text-center mb-8">

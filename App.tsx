@@ -9,11 +9,12 @@ import Reports from './components/Reports';
 import TaxManager from './components/TaxManager';
 import PricingCalculator from './components/PricingCalculator';
 import Documentation from './components/Documentation';
+import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
 import { Transaction, ProjectMetadata, BankAccount, BudgetLineItem } from './types';
 
-type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation';
+type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
 
 // --- UTILS ---
 export const generateId = () => {
@@ -200,6 +201,8 @@ const App: React.FC = () => {
         return <PricingCalculator />;
       case 'documentation':
         return <Documentation />;
+      case 'branding':
+        return <BrandingTool />;
       case 'import':
         return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
       default:
@@ -216,11 +219,12 @@ const App: React.FC = () => {
       <Header currentView={currentView} onNavigate={setCurrentView} onLogout={handleLogout} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onOpenPresentation={() => setIsPresentationOpen(true)} />
       <PresentationModal isOpen={isPresentationOpen} onClose={() => setIsPresentationOpen(false)} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderView()}
+        <div key={currentView} className="animate-fade-in-up">
+          {renderView()}
+        </div>
       </main>
     </div>
   );
 };
 
 export default App;
-    

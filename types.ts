@@ -37,10 +37,10 @@ export type ExpenseNature = 'Cachê' | 'Serviço (PF/PJ)' | 'Material de Consumo
 
 export interface BudgetLineItem {
   id: string;
-  activity: string; // Ex: Desenvolvimento do projeto
-  expenseItem: string; // Ex: Roteiro
-  stage: ProjectStage; // Ex: Pré-Produção
-  nature: ExpenseNature; // Ex: Cachê
+  activity: string; 
+  expenseItem: string; 
+  stage: ProjectStage; 
+  nature: ExpenseNature; 
   plannedAmount: number;
 }
 
@@ -48,7 +48,7 @@ export type BankName = 'Banco do Brasil' | 'Bradesco' | 'Caixa' | 'Itaú' | 'Nub
 
 export interface BankAccount {
   id: string;
-  name: string; // e.g. "Conta Movimento", "Investimentos"
+  name: string; 
   bank: BankName;
   entityType: 'PF' | 'PJ';
 }
@@ -60,20 +60,19 @@ export interface Transaction {
   type: 'inflow' | 'outflow';
   category: string;
   project?: string; 
-  date: string; // ISO date string
-  month: string; // e.g. "Julho"
-  entity: 'PF' | 'PJ'; // Pessoa Física or Pessoa Jurídica
-  supplierDoc?: string; // CPF or CNPJ of the supplier
-  paymentDoc?: string; // Check number, Transaction ID
-  isRecurring?: boolean; // If generated automatically
-  relatedId?: string; // ID to link recurring series
+  projectId?: string; // New field for robust linking
+  date: string; 
+  month: string; 
+  entity: 'PF' | 'PJ'; 
+  supplierDoc?: string; 
+  paymentDoc?: string; 
+  isRecurring?: boolean; 
+  relatedId?: string; 
   
-  // New fields for LPG Accountability
-  budgetLineId?: string; // Link to specific budget line
+  budgetLineId?: string; 
   projectStage?: ProjectStage;
   projectNature?: ExpenseNature;
   
-  // Bank Account Link
   accountId?: string;
 }
 
@@ -81,11 +80,11 @@ export interface ProjectMetadata {
   id: string;
   name: string;
   legislation: string;
-  budget: number; // Valor Aprovado Total
+  budget: number; 
   startDate: string;
   endDate?: string;
   origin: 'manual' | 'mapa_cultural';
   mapaCulturalId?: string;
-  proponentDoc?: string; // CPF or CNPJ of the proponent
-  budgetLines?: BudgetLineItem[]; // Detailed budget
+  proponentDoc?: string; 
+  budgetLines?: BudgetLineItem[]; 
 }

@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
     <title>Destrava - Gestão Cultural Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,10 +30,10 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Inter', sans-serif; }
+      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
       
       /* Custom scrollbar */
-      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -45,8 +46,9 @@
       }
       
       /* Animation Utilities */
-      .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-      .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+      .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+      .animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+      .animate-fade-in-left { animation: fadeInLeft 0.4s ease-out; }
       
       @keyframes fadeIn {
         from { opacity: 0; }
@@ -54,9 +56,18 @@
       }
       
       @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(15px); }
         to { opacity: 1; transform: translateY(0); }
       }
+
+      @keyframes fadeInLeft {
+        from { opacity: 0; transform: translateX(-30px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+
+      /* Utility for hiding scrollbar but keeping scroll active */
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
@@ -72,7 +83,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+  <body class="bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

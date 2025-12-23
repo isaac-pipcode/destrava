@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 const PricingCalculator: React.FC = () => {
@@ -115,195 +116,197 @@ const PricingCalculator: React.FC = () => {
           </div>
       </div>
 
-      {activeTab === 'hourly' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                      <span>⏱️</span> Dados de Trabalho
-                  </h3>
-                  
-                  <div className="space-y-4">
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Meta de Renda Mensal (Líquida)</label>
-                          <div className="relative">
-                              <span className="absolute left-3 top-3 text-gray-400">R$</span>
-                              <input 
-                                type="number" 
-                                value={desiredIncome}
-                                onChange={e => setDesiredIncome(e.target.value)}
-                                placeholder="Ex: 5000"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                          <p className="text-[10px] text-gray-400 mt-1">Quanto você quer tirar "limpo" pro bolso?</p>
-                      </div>
-
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Custos Fixos Mensais</label>
-                          <div className="relative">
-                              <span className="absolute left-3 top-3 text-gray-400">R$</span>
-                              <input 
-                                type="number" 
-                                value={fixedCosts}
-                                onChange={e => setFixedCosts(e.target.value)}
-                                placeholder="Ex: 1500"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                          <p className="text-[10px] text-gray-400 mt-1">Aluguel, Internet, Softwares, Contador, MEI...</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Dias / Semana</label>
-                              <input 
-                                type="number" 
-                                value={daysPerWeek}
-                                onChange={e => setDaysPerWeek(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Horas Produtivas / Dia</label>
-                              <input 
-                                type="number" 
-                                value={hoursPerDay}
-                                onChange={e => setHoursPerDay(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                      </div>
-                  </div>
-              </div>
-
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-3xl border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center items-center text-center">
-                   <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">Seu Valor Hora Mínimo</h4>
-                   <div className="text-5xl font-display font-bold text-indigo-600 dark:text-indigo-300 mb-2">
-                       {formatCurrency(calculatedHourlyRate)}
-                   </div>
-                   <p className="text-gray-600 dark:text-gray-300 max-w-xs text-sm">
-                       Para cobrir seus custos fixos e atingir sua meta salarial, você não deve cobrar menos que isso por hora técnica.
-                   </p>
-                   
-                   <div className="mt-8 w-full bg-white dark:bg-slate-800 p-4 rounded-xl text-left text-xs text-gray-500 dark:text-gray-400 shadow-sm">
-                       <p className="mb-1"><strong>Custo Mensal Total:</strong> {formatCurrency((parseFloat(desiredIncome)||0) + (parseFloat(fixedCosts)||0))}</p>
-                       <p><strong>Horas Vendáveis Mês:</strong> {((parseFloat(daysPerWeek)||0) * (parseFloat(hoursPerDay)||0) * 4.28).toFixed(0)}h</p>
-                   </div>
-
-                   <button 
-                    onClick={() => setActiveTab('project')}
-                    className="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors text-sm"
-                   >
-                       Usar este valor em um Orçamento &rarr;
-                   </button>
-              </div>
-          </div>
-      )}
-
-      {activeTab === 'project' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-              <div className="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                      <span>💰</span> Composição do Preço
-                  </h3>
-
-                  <div className="space-y-5">
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Horas Estimadas</label>
-                              <input 
-                                type="number" 
-                                value={estimatedHours}
-                                onChange={e => setEstimatedHours(e.target.value)}
-                                placeholder="Ex: 10"
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor da Hora</label>
-                              <div className="relative">
+      <div key={activeTab} className="animate-fade-in">
+        {activeTab === 'hourly' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                        <span>⏱️</span> Dados de Trabalho
+                    </h3>
+                    
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Meta de Renda Mensal (Líquida)</label>
+                            <div className="relative">
                                 <span className="absolute left-3 top-3 text-gray-400">R$</span>
                                 <input 
-                                    type="number" 
-                                    value={manualHourlyRate}
-                                    onChange={e => setManualHourlyRate(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                  type="number" 
+                                  value={desiredIncome}
+                                  onChange={e => setDesiredIncome(e.target.value)}
+                                  placeholder="Ex: 5000"
+                                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
                                 />
-                              </div>
-                          </div>
-                      </div>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">Quanto você quer tirar "limpo" pro bolso?</p>
+                        </div>
 
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Custos Diretos (Terceiros/Materiais)</label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-3 text-gray-400">R$</span>
-                            <input 
-                                type="number" 
-                                value={directCosts}
-                                onChange={e => setDirectCosts(e.target.value)}
-                                placeholder="Ex: 500 (Transporte, assistente, etc)"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                            />
-                          </div>
-                      </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Custos Fixos Mensais</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-3 text-gray-400">R$</span>
+                                <input 
+                                  type="number" 
+                                  value={fixedCosts}
+                                  onChange={e => setFixedCosts(e.target.value)}
+                                  placeholder="Ex: 1500"
+                                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">Aluguel, Internet, Softwares, Contador, MEI...</p>
+                        </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Margem de Lucro (%)</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Dias / Semana</label>
+                                <input 
+                                  type="number" 
+                                  value={daysPerWeek}
+                                  onChange={e => setDaysPerWeek(e.target.value)}
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Horas Produtivas / Dia</label>
+                                <input 
+                                  type="number" 
+                                  value={hoursPerDay}
+                                  onChange={e => setHoursPerDay(e.target.value)}
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-3xl border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center items-center text-center">
+                    <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">Seu Valor Hora Mínimo</h4>
+                    <div className="text-5xl font-display font-bold text-indigo-600 dark:text-indigo-300 mb-2">
+                        {formatCurrency(calculatedHourlyRate)}
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-xs text-sm">
+                        Para cobrir seus custos fixos e atingir sua meta salarial, você não deve cobrar menos que isso por hora técnica.
+                    </p>
+                    
+                    <div className="mt-8 w-full bg-white dark:bg-slate-800 p-4 rounded-xl text-left text-xs text-gray-500 dark:text-gray-400 shadow-sm">
+                        <p className="mb-1"><strong>Custo Mensal Total:</strong> {formatCurrency((parseFloat(desiredIncome)||0) + (parseFloat(fixedCosts)||0))}</p>
+                        <p><strong>Horas Vendáveis Mês:</strong> {((parseFloat(daysPerWeek)||0) * (parseFloat(hoursPerDay)||0) * 4.28).toFixed(0)}h</p>
+                    </div>
+
+                    <button 
+                      onClick={() => setActiveTab('project')}
+                      className="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors text-sm"
+                    >
+                        Usar este valor em um Orçamento &rarr;
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'project' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                        <span>💰</span> Composição do Preço
+                    </h3>
+
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Horas Estimadas</label>
+                                <input 
+                                  type="number" 
+                                  value={estimatedHours}
+                                  onChange={e => setEstimatedHours(e.target.value)}
+                                  placeholder="Ex: 10"
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor da Hora</label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-3 text-gray-400">R$</span>
+                                  <input 
+                                      type="number" 
+                                      value={manualHourlyRate}
+                                      onChange={e => setManualHourlyRate(e.target.value)}
+                                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                  />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Custos Diretos (Terceiros/Materiais)</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-3 text-gray-400">R$</span>
                               <input 
-                                type="number" 
-                                value={profitMargin}
-                                onChange={e => setProfitMargin(e.target.value)}
-                                placeholder="20"
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                  type="number" 
+                                  value={directCosts}
+                                  onChange={e => setDirectCosts(e.target.value)}
+                                  placeholder="Ex: 500 (Transporte, assistente, etc)"
+                                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
                               />
-                          </div>
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Imposto NF (%)</label>
-                              <input 
-                                type="number" 
-                                value={taxRate}
-                                onChange={e => setTaxRate(e.target.value)}
-                                placeholder="6"
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                              />
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                            </div>
+                        </div>
 
-              <div className="lg:col-span-5 space-y-4">
-                  <div className="bg-gray-50 dark:bg-slate-900 p-6 rounded-3xl border border-gray-200 dark:border-slate-700">
-                      <h4 className="font-bold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-slate-700 pb-2">Resultado do Cálculo</h4>
-                      
-                      <div className="space-y-3 text-sm">
-                          <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                              <span>Custo Base (Horas + Diretos)</span>
-                              <span>{formatCurrency(baseCost)}</span>
-                          </div>
-                          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
-                              <span>+ Lucro ({profitMargin}%)</span>
-                              <span>{formatCurrency(profitValue)}</span>
-                          </div>
-                          <div className="flex justify-between text-orange-600 dark:text-orange-400 font-bold border-b border-gray-200 dark:border-slate-700 pb-2">
-                              <span>+ Imposto "Por dentro"</span>
-                              <span>{formatCurrency(taxValue)}</span>
-                          </div>
-                          <div className="flex justify-between items-center pt-2">
-                              <span className="font-bold text-gray-800 dark:text-white uppercase text-xs">Valor da Nota Fiscal</span>
-                              <span className="text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400">
-                                  {formatCurrency(finalPrice)}
-                              </span>
-                          </div>
-                      </div>
-                  </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Margem de Lucro (%)</label>
+                                <input 
+                                  type="number" 
+                                  value={profitMargin}
+                                  onChange={e => setProfitMargin(e.target.value)}
+                                  placeholder="20"
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Imposto NF (%)</label>
+                                <input 
+                                  type="number" 
+                                  value={taxRate}
+                                  onChange={e => setTaxRate(e.target.value)}
+                                  placeholder="6"
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 text-xs text-indigo-800 dark:text-indigo-200">
-                      <p><strong>Entenda o Imposto:</strong> O cálculo já inclui o "Gross Up". Se você emitir uma nota de <strong>{formatCurrency(finalPrice)}</strong> e pagar <strong>{taxRate}%</strong> de imposto ({formatCurrency(finalPrice * (parseFloat(taxRate)/100))}), sobrará exatamente o valor do seu custo + lucro ({formatCurrency(priceBeforeTax)}).</p>
-                  </div>
-              </div>
-          </div>
-      )}
+                <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-gray-50 dark:bg-slate-900 p-6 rounded-3xl border border-gray-200 dark:border-slate-700">
+                        <h4 className="font-bold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-slate-700 pb-2">Resultado do Cálculo</h4>
+                        
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                <span>Custo Base (Horas + Diretos)</span>
+                                <span>{formatCurrency(baseCost)}</span>
+                            </div>
+                            <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                                <span>+ Lucro ({profitMargin}%)</span>
+                                <span>{formatCurrency(profitValue)}</span>
+                            </div>
+                            <div className="flex justify-between text-orange-600 dark:text-orange-400 font-bold border-b border-gray-200 dark:border-slate-700 pb-2">
+                                <span>+ Imposto "Por dentro"</span>
+                                <span>{formatCurrency(taxValue)}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-2">
+                                <span className="font-bold text-gray-800 dark:text-white uppercase text-xs">Valor da Nota Fiscal</span>
+                                <span className="text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400">
+                                    {formatCurrency(finalPrice)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 text-xs text-indigo-800 dark:text-indigo-200">
+                        <p><strong>Entenda o Imposto:</strong> O cálculo já inclui o "Gross Up". Se você emitir uma nota de <strong>{formatCurrency(finalPrice)}</strong> e pagar <strong>{taxRate}%</strong> de imposto ({formatCurrency(finalPrice * (parseFloat(taxRate)/100))}), sobrará exatamente o valor do seu custo + lucro ({formatCurrency(priceBeforeTax)}).</p>
+                    </div>
+                </div>
+            </div>
+        )}
+      </div>
 
     </div>
   );
