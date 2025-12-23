@@ -38,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
           <div className="absolute top-1/2 -right-24 w-64 h-64 bg-govgreen/10 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Theme Toggle (Absolute) */}
+      {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-10">
         {toggleTheme && (
              <button 
@@ -73,7 +73,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
             <button 
               onClick={() => handleSimulatedLogin('google')}
               disabled={!!isLoading}
-              className="w-full py-3 px-4 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-full font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3.5 px-4 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-full font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
                {isLoading === 'google' ? (
                  <svg className="animate-spin h-5 w-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -88,14 +88,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                  </svg>
                )}
-               {isLoading === 'google' ? 'Conectando...' : 'Entrar com Google'}
+               <span className="text-sm">Entrar com Google</span>
             </button>
 
-            {/* Gov.br Button - Corrigido com Logo Visual Oficial */}
+            {/* Gov.br Button - Corrigido com representação visual autêntica */}
             <button 
               onClick={() => handleSimulatedLogin('gov')}
               disabled={!!isLoading}
-              className="w-full py-3 px-4 bg-[#1351b4] text-white rounded-full font-bold text-lg hover:bg-[#0c326f] transition-all shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
+              className="w-full py-3 px-4 bg-[#1351b4] text-white rounded-full font-bold hover:bg-[#0c326f] transition-all shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
             >
                {isLoading === 'gov' ? (
                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -103,23 +103,28 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                  </svg>
                ) : (
-                 <>
-                  <span className="text-sm uppercase tracking-wide opacity-90">Entrar com</span>
-                  <svg width="80" height="24" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 20C10 23.3137 7.31371 26 4 26C0.686292 26 -2 23.3137 -2 20C-2 16.6863 0.686292 14 4 14C7.31371 14 10 16.6863 10 20Z" fill="white" transform="translate(10,-5)"/>
-                    <path d="M16 14V26H21V14H16Z" fill="white" transform="translate(10,-5)"/>
-                    <path d="M25 14V26H30V14H25Z" fill="white" transform="translate(10,-5)"/>
-                    <path d="M40 14V26H35V14H40Z" fill="white" transform="translate(10,-5)"/>
-                    <circle cx="65" cy="15" r="2.5" fill="white" />
-                    <text x="70" y="21" fill="white" font-family="Arial, sans-serif" font-weight="900" font-size="18">br</text>
-                  </svg>
-                 </>
+                 <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold opacity-90">Entrar com</span>
+                    <svg width="84" height="24" viewBox="0 0 114 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* G */}
+                      <path d="M17.5 16.5C17.5 21.1944 13.6944 25 9 25C4.30558 25 0.5 21.1944 0.5 16.5C0.5 11.8056 4.30558 8 9 8C11.5 8 13.5 9 15 10.5L12 13.5C11 12.5 10.5 12 9 12C6.5 12 4.5 14 4.5 16.5C4.5 19 6.5 21 9 21C11 21 12.5 19.5 13 18H9V14.5H17.5V16.5Z" fill="white"/>
+                      {/* O */}
+                      <path d="M32.5 16.5C32.5 21.1944 28.6944 25 24 25C19.3056 25 15.5 21.1944 15.5 16.5C15.5 11.8056 19.3056 8 24 8C28.6944 8 32.5 11.8056 32.5 16.5ZM19.5 16.5C19.5 19 21.5 21 24 21C26.5 21 28.5 19 28.5 16.5C28.5 14 26.5 12 24 12C21.5 12 19.5 14 19.5 16.5Z" fill="white"/>
+                      {/* V */}
+                      <path d="M46.5 8.5L40.5 24.5H37L31 8.5H35L38.5 18.5L42 8.5H46.5Z" fill="white"/>
+                      {/* . */}
+                      <circle cx="51" cy="22" r="2.5" fill="white"/>
+                      {/* Circle for BR */}
+                      <circle cx="68" cy="16.5" r="8" fill="white"/>
+                      <text x="63" y="21" fill="#1351b4" font-family="Arial" font-weight="900" font-size="12">br</text>
+                    </svg>
+                 </div>
                )}
             </button>
             
             <div className="relative flex py-4 items-center">
                 <div className="flex-grow border-t border-gray-200 dark:border-slate-600"></div>
-                <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase font-bold">Ou via e-mail</span>
+                <span className="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold tracking-widest">Ou via e-mail</span>
                 <div className="flex-grow border-t border-gray-200 dark:border-slate-600"></div>
             </div>
 
@@ -130,31 +135,31 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
                   placeholder="Seu e-mail"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
                 />
                 <input 
                   type="password" 
                   placeholder="Sua senha"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
                 />
                 <button 
                   type="submit"
                   disabled={!!isLoading || !email || !password}
-                  className="w-full py-3 bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {isLoading === 'email' ? 'Autenticando...' : 'Acessar Conta'}
                 </button>
             </form>
 
-            <p className="text-center text-xs text-gray-400 mt-4">
-               Ao continuar, você concorda com os Termos de Uso e Política de Privacidade.
+            <p className="text-center text-[10px] text-gray-400 mt-6 uppercase tracking-tight">
+               Ao continuar, você concorda com os <a href="#" className="underline">Termos de Uso</a> e <a href="#" className="underline">Privacidade</a>.
             </p>
           </div>
         </div>
         <div className="bg-gray-50 dark:bg-slate-900/50 p-4 text-center border-t border-gray-100 dark:border-slate-700">
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Iniciativa de Apoio à Cultura</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Tecnologia para a Cultura Brasileira</p>
         </div>
       </div>
     </div>
