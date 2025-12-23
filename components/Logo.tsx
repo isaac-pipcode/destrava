@@ -17,16 +17,16 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
   return (
     <div className={`${sizes[size]} ${className} relative flex items-center justify-center`}>
       <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-sm">
-        {/* Haste do Cadeado (Azul Gov) */}
+        {/* Haste do Cadeado (Azul Gov) - Geometria Original e Simétrica */}
         <path 
-          d="M30 43V32C30 20.9543 38.9543 12 50 12C61.0457 12 70 20.9543 70 32V38" 
+          d="M30 42V32C30 20.9543 38.9543 12 50 12C61.0457 12 70 20.9543 70 32V42" 
           stroke="#1351b4" 
           strokeWidth="10" 
           strokeLinecap="round"
           className="stroke-govblue"
         />
         
-        {/* Corpo do Cadeado - Divisão Diagonal */}
+        {/* Corpo do Cadeado - Design Flat com Cores do Mapa Cultural */}
         {/* Parte Verde (Superior Esquerda) */}
         <path 
           d="M20 52C20 47.5817 23.5817 44 28 44H72C76.4183 44 80 47.5817 80 52V82C80 86.4183 76.4183 90 72 90H28C23.5817 90 20 86.4183 20 82V52Z" 
@@ -34,7 +34,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
           className="fill-govgreen"
         />
         
-        {/* Parte Laranja (Inferior Direita - Corte Diagonal) */}
+        {/* Parte Laranja (Corte Diagonal Inferior Direito) */}
         <path 
           d="M80 44L20 90H72C76.4183 90 80 86.4183 80 82V44Z" 
           fill="#f37021" 
@@ -43,10 +43,10 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
 
         {/* Símbolo do Cifrão ($) - Centralizado e Branco */}
         <g transform="translate(50, 67) scale(0.9)">
-            {/* Linha vertical do cifrão */}
+            {/* Traço vertical central */}
             <rect x="-1.5" y="-18" width="3" height="36" rx="1.5" fill="white" />
             
-            {/* Desenho do S */}
+            {/* Curvas do S */}
             <path 
               d="M7.5 -10C7.5 -10 7 -14 -2 -14C-11 -14 -11 -6 -2 -6C7 -6 7 2 -2 2C-11 2 -11 10 -2 10C7 10 7.5 6 7.5 6" 
               stroke="white" 
