@@ -8,19 +8,18 @@ import Accountability from './components/Accountability';
 import Reports from './components/Reports';
 import TaxManager from './components/TaxManager';
 import PricingCalculator from './components/PricingCalculator';
+import Documentation from './components/Documentation';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
 import { Transaction, ProjectMetadata, BankAccount, BudgetLineItem } from './types';
 
-type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing';
+type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation';
 
 // --- UTILS ---
-// Gerador de ID compatível para evitar erros com crypto.randomUUID em ambientes sem HTTPS
 export const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 };
 
-// --- INITIAL DATA STATES (Defaults) ---
 const DEFAULT_ACCOUNTS: BankAccount[] = [
     { id: '1', name: 'Conta Movimento PJ', bank: 'Banco do Brasil', entityType: 'PJ' },
     { id: '2', name: 'Conta Pessoal', bank: 'Nubank', entityType: 'PF' },
@@ -33,33 +32,26 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
   
-  // --- STATE WITH PERSISTENCE ---
-  
-  // Transactions
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('app_transactions');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Projects
   const [projects, setProjects] = useState<ProjectMetadata[]>(() => {
     const saved = localStorage.getItem('app_projects');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Accounts
   const [accounts, setAccounts] = useState<BankAccount[]>(() => {
     const saved = localStorage.getItem('app_accounts');
     return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
   });
   
-  // Custom Categories
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
       const saved = localStorage.getItem('app_categories');
       return saved ? JSON.parse(saved) : [];
   });
 
-  // Theme Persistence
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -73,7 +65,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // --- PERSISTENCE EFFECTS ---
   useEffect(() => { localStorage.setItem('app_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('app_projects', JSON.stringify(projects)); }, [projects]);
   useEffect(() => { localStorage.setItem('app_accounts', JSON.stringify(accounts)); }, [accounts]);
@@ -91,10 +82,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
-
+  const handleLogin = () => setIsLoggedIn(true);
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentView('dashboard');
@@ -110,28 +98,22 @@ const App: React.FC = () => {
     });
   };
 
-  // --- DEMO DATA GENERATOR (ROBUST) ---
   const generateRobustDemoData = useCallback(() => {
-      // Usar confirm simples para evitar bloqueios
       if (window.confirm("Isso carregará um cenário de demonstração completo (4 meses) e substituirá os dados atuais. Continuar?")) {
-        
         try {
             const today = new Date();
             const months = [
-                new Date(today.getFullYear(), today.getMonth() - 3, 1), // 3 months ago
-                new Date(today.getFullYear(), today.getMonth() - 2, 1), // 2 months ago
-                new Date(today.getFullYear(), today.getMonth() - 1, 1), // Last month
-                today // Current month
+                new Date(today.getFullYear(), today.getMonth() - 3, 1),
+                new Date(today.getFullYear(), today.getMonth() - 2, 1),
+                new Date(today.getFullYear(), today.getMonth() - 1, 1),
+                today
             ];
-
             const getMonthName = (d: Date) => d.toLocaleString('pt-BR', { month: 'long' }).charAt(0).toUpperCase() + d.toLocaleString('pt-BR', { month: 'long' }).slice(1);
-            
-            // 1. Create Projects with Budget Lines
             const projId = "proj-demo-01";
-            const line1 = "line-01"; // Equipamentos
-            const line2 = "line-02"; // Cachê Direção
-            const line3 = "line-03"; // Alimentação
-            const line4 = "line-04"; // Edição
+            const line1 = "line-01";
+            const line2 = "line-02";
+            const line3 = "line-03";
+            const line4 = "line-04";
 
             const demoProject: ProjectMetadata = {
                 id: projId,
@@ -149,7 +131,6 @@ const App: React.FC = () => {
                 ]
             };
 
-            // 2. Transactions
             const demoTransactions: Transaction[] = [];
             const addTx = (desc: string, amount: number, type: 'inflow' | 'outflow', cat: string, date: Date, entity: 'PF'|'PJ', proj?: string, accId?: string, lineId?: string, doc?: string) => {
                 demoTransactions.push({
@@ -171,45 +152,32 @@ const App: React.FC = () => {
                 });
             };
 
-            // Mês -3: Recebimento Recurso e Pré-Produção
             addTx("Recebimento 1ª Parcela LPG", 50000, 'inflow', "Edital/Lei de Incentivo", new Date(months[0].getFullYear(), months[0].getMonth(), 5), 'PJ', demoProject.name, '1', undefined, "OB-202401");
             addTx("Pagamento Contador (Abertura)", 1200, 'outflow', "Contabilidade/Jurídico", new Date(months[0].getFullYear(), months[0].getMonth(), 10), 'PJ', undefined, '1');
             addTx("Cachê Diretor (Parcela 1)", 5000, 'outflow', "Cachê Diretor", new Date(months[0].getFullYear(), months[0].getMonth(), 15), 'PJ', demoProject.name, '1', line2, "NF-101");
-
-            // Mês -3: Pessoal (Sobrevivência)
             addTx("Salário Professor", 3500, 'inflow', "Salário/Emprego CLT", new Date(months[0].getFullYear(), months[0].getMonth(), 5), 'PF', undefined, '2');
             addTx("Aluguel Apartamento", 1800, 'outflow', "Habitação (Aluguel/Condomínio)", new Date(months[0].getFullYear(), months[0].getMonth(), 10), 'PF', undefined, '2');
-
-            // Mês -2: Compras e Preparação
             addTx("Locação Kit Câmera RED", 8000, 'outflow', "Locação de Câmera Cinema", new Date(months[1].getFullYear(), months[1].getMonth(), 5), 'PJ', demoProject.name, '1', line1, "NF-202");
             addTx("HDs Externos SSD", 1500, 'outflow', "Produção/Material", new Date(months[1].getFullYear(), months[1].getMonth(), 8), 'PJ', demoProject.name, '1', undefined, "NF-203");
             addTx("DAS MEI Mensal", 75, 'outflow', "Impostos (MEI/Simples)", new Date(months[1].getFullYear(), months[1].getMonth(), 20), 'PJ', undefined, '1');
-
-            // Mês -2: Pessoal
             addTx("Pró-labore Retirada", 2000, 'inflow', "Pró-labore/Retirada da PJ", new Date(months[1].getFullYear(), months[1].getMonth(), 10), 'PF', undefined, '2');
             addTx("Supermercado", 850, 'outflow', "Alimentação/Mercado", new Date(months[1].getFullYear(), months[1].getMonth(), 12), 'PF', undefined, '2');
-
-            // Mês -1: Produção (Gastos Intensos)
             addTx("Alimentação Equipe (Catering)", 2500, 'outflow', "Alimentação Equipe", new Date(months[2].getFullYear(), months[2].getMonth(), 2), 'PJ', demoProject.name, '1', line3, "NF-305");
             addTx("Uber/Transporte Set", 450, 'outflow', "Transporte/Logística", new Date(months[2].getFullYear(), months[2].getMonth(), 5), 'PJ', demoProject.name, '1');
             addTx("Locação Lentes Especiais", 4000, 'outflow', "Locação de Câmera Cinema", new Date(months[2].getFullYear(), months[2].getMonth(), 10), 'PJ', demoProject.name, '1', line1, "NF-310");
             addTx("Cachê Diretor (Parcela 2)", 5000, 'outflow', "Cachê Diretor", new Date(months[2].getFullYear(), months[2].getMonth(), 25), 'PJ', demoProject.name, '1', line2, "NF-320");
-
-            // Mês Atual: Pós e Freelance
             addTx("Freelance Edição Vídeo Corp", 3000, 'inflow', "Cachê Artístico/Serviço", new Date(today.getFullYear(), today.getMonth(), 5), 'PJ', "Trabalho Extra", '1', undefined, "NF-401");
             addTx("Editor de Cor (Colorist)", 4000, 'outflow', "Ilha de Edição", new Date(today.getFullYear(), today.getMonth(), 10), 'PJ', demoProject.name, '1', line4, "NF-405");
             addTx("DAS MEI Mensal", 75, 'outflow', "Impostos (MEI/Simples)", new Date(today.getFullYear(), today.getMonth(), 20), 'PJ', undefined, '1');
             
-            // Apply Data
             setProjects([demoProject]);
             setTransactions(demoTransactions);
             setAccounts(DEFAULT_ACCOUNTS);
-            
             alert("Ambiente de demonstração carregado com sucesso!");
             setCurrentView('dashboard');
         } catch (e) {
             console.error("Erro ao gerar dados:", e);
-            alert("Ocorreu um erro ao gerar os dados de demonstração. Verifique o console.");
+            alert("Ocorreu um erro ao gerar os dados de demonstração.");
         }
       }
   }, []);
@@ -217,70 +185,25 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return (
-          <DashboardHome 
-            onNavigate={(view) => setCurrentView(view as View)} 
-            transactions={transactions} 
-            setTransactions={setTransactions} 
-            onLoadDemo={generateRobustDemoData}
-          />
-        );
+        return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
       case 'manual_pf':
-        return (
-          <ManualManager 
-            transactions={transactions} 
-            setTransactions={setTransactions} 
-            viewContext="PF"
-            customCategories={customCategories}
-            onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
-            projects={projects}
-            accounts={accounts}
-            onAddAccount={(acc) => setAccounts(prev => [...prev, acc])}
-          />
-        );
+        return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
       case 'manual_pj':
-        return (
-          <ManualManager 
-            transactions={transactions} 
-            setTransactions={setTransactions} 
-            viewContext="PJ"
-            customCategories={customCategories}
-            onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])}
-            projects={projects}
-            accounts={accounts}
-            onAddAccount={(acc) => setAccounts(prev => [...prev, acc])}
-          />
-        );
+        return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
       case 'reports':
         return <Reports transactions={transactions} />;
       case 'accountability':
-        return (
-          <Accountability 
-            transactions={transactions} 
-            projects={projects}
-            onSaveProject={handleSaveProject}
-          />
-        );
+        return <Accountability transactions={transactions} projects={projects} onSaveProject={handleSaveProject} />;
       case 'tax':
-        return (
-          <TaxManager 
-            transactions={transactions} 
-            onNavigate={(view) => setCurrentView(view)}
-          />
-        );
+        return <TaxManager transactions={transactions} onNavigate={(view) => setCurrentView(view)} />;
       case 'pricing':
         return <PricingCalculator />;
+      case 'documentation':
+        return <Documentation />;
       case 'import':
         return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
       default:
-        return (
-          <DashboardHome 
-            onNavigate={(view) => setCurrentView(view as View)} 
-            transactions={transactions}
-            setTransactions={setTransactions} 
-            onLoadDemo={generateRobustDemoData}
-          />
-        );
+        return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} onLoadDemo={generateRobustDemoData} />;
     }
   };
 
@@ -290,17 +213,8 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
-      <Header 
-        currentView={currentView} 
-        onNavigate={setCurrentView} 
-        onLogout={handleLogout}
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        onOpenPresentation={() => setIsPresentationOpen(true)}
-      />
-      
+      <Header currentView={currentView} onNavigate={setCurrentView} onLogout={handleLogout} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onOpenPresentation={() => setIsPresentationOpen(true)} />
       <PresentationModal isOpen={isPresentationOpen} onClose={() => setIsPresentationOpen(false)} />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderView()}
       </main>
