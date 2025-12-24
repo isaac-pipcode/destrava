@@ -46,6 +46,7 @@ const TaxManager: React.FC<TaxManagerProps> = ({
   const [withholdIss, setWithholdIss] = useState(false);
   const [issRate, setIssRate] = useState(2);
   const [selectedBankId, setSelectedBankId] = useState('');
+  const [showBankDetailsOnInvoice, setShowBankDetailsOnInvoice] = useState(true);
 
   // Carregar dados de uma transação do Diário se houver
   useEffect(() => {
@@ -76,12 +77,17 @@ const TaxManager: React.FC<TaxManagerProps> = ({
     return { rate: baseRate * 100, federal: federalTaxes, iss: issValue, total: federalTaxes + issValue };
   }, [businessProfile, serviceValue, factorR, withholdIss, issRate]);
 
+  const applyManualTemplate = () => {
+    const template = `Prestação de serviços artísticos de [DESCREVER ATIVIDADE], referente ao projeto [NOME DO PROJETO], realizado em [DATA/LOCAL]. Valor total bruto: ${formatCurrency(serviceValue)}.`;
+    setServiceDesc(template);
+  };
+
   const expandDescriptionWithAI = async () => {
     if (!serviceDesc || serviceDesc.length < 5) return;
     setIsExpandingDescription(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Como um assistente fiscal para artistas brasileiros, transforme esta descrição curta em um texto formal e técnico para Nota Fiscal de Serviço (NFSe), adequado para prestação de contas de editais. Seja profissional e detalhado. Descrição curta: "${serviceDesc}". Retorne APENAS o texto expandido.`;
+      const prompt = `Como um assistente fiscal para artistas brasileiros, transforme esta descrição curta em um texto formal e técnico para Nota Fiscal de Serviço (NFSe), adequado para prestação de contas de editais (LPG/Aldir Blanc). Seja profissional e detalhado. Descrição curta: "${serviceDesc}". Retorne APENAS o texto expandido final.`;
       
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -90,7 +96,8 @@ const TaxManager: React.FC<TaxManagerProps> = ({
       
       if (response.text) setServiceDesc(response.text.trim());
     } catch (e) {
-      console.error(e);
+      console.error("Erro na IA:", e);
+      alert("Não foi possível expandir com IA. Verifique sua chave API.");
     } finally {
       setIsExpandingDescription(false);
     }
@@ -111,7 +118,7 @@ const TaxManager: React.FC<TaxManagerProps> = ({
         status: 'draft'
     };
     onSaveInvoice(invoice);
-    alert("Simulação arquivada com sucesso!");
+    alert("Nota arquivada no histórico!");
     setCustomerName(''); setCustomerDoc(''); setServiceDesc(''); setServiceValue(0);
   };
 
@@ -123,7 +130,7 @@ const TaxManager: React.FC<TaxManagerProps> = ({
             <div className="bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl border-t-8 border-govblue p-8 md:p-12">
                 <div className="flex items-center gap-4 mb-8">
                     <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center text-govblue text-3xl">🏛️</div>
-                    <div><h2 className="text-3xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">Onboarding Fiscal</h2><p className="text-gray-500 dark:text-gray-400 font-medium text-sm">Configure os dados da sua empresa para cálculos precisos.</p></div>
+                    <div><h2 className="text-3xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">Onboarding Fiscal</h2><p className="text-gray-500 dark:text-gray-400 font-medium text-sm">Configure os dados da sua empresa para cálculos e emissões.</p></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
@@ -132,7 +139,7 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                     </div>
                     <div className="space-y-6">
                         <div><label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">CNAE Principal</label><select value={tempProfile.mainCnae?.code || ''} onChange={e => setTempProfile({...tempProfile, mainCnae: CULTURAL_CNAES.find(c => c.code === e.target.value)})} className="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white font-bold h-[58px] outline-none"><option value="">Selecione sua atividade...</option>{CULTURAL_CNAES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.description.substring(0, 35)}...</option>)}</select></div>
-                        <button onClick={() => { onUpdateProfile(tempProfile); setSetupMode(false); }} className="w-full py-5 bg-govblue text-white font-black rounded-3xl shadow-xl hover:bg-blue-800 transition-all uppercase text-sm tracking-widest">Acessar Simulador</button>
+                        <button onClick={() => { onUpdateProfile(tempProfile); setSetupMode(false); }} className="w-full py-5 bg-govblue text-white font-black rounded-3xl shadow-xl hover:bg-blue-800 transition-all uppercase text-sm tracking-widest">Acessar Painel Fiscal</button>
                     </div>
                 </div>
             </div>
@@ -146,24 +153,9 @@ const TaxManager: React.FC<TaxManagerProps> = ({
       {/* Menu Superior de Gestão Fiscal */}
       <div className="flex justify-center mb-10">
           <div className="bg-white dark:bg-slate-800 p-1.5 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 flex">
-              <button 
-                onClick={() => setActiveTab('simulator')}
-                className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'simulator' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                ✍️ Elaborar Nota
-              </button>
-              <button 
-                onClick={() => setActiveTab('history')}
-                className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                📚 Histórico
-              </button>
-              <button 
-                onClick={() => setActiveTab('config')}
-                className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'config' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                ⚙️ Ajustes
-              </button>
+              <button onClick={() => setActiveTab('simulator')} className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'simulator' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>✍️ Elaborar Nota</button>
+              <button onClick={() => setActiveTab('history')} className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>📚 Histórico</button>
+              <button onClick={() => setActiveTab('config')} className={`px-8 py-3 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'config' ? 'bg-govblue text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>⚙️ Ajustes</button>
           </div>
       </div>
 
@@ -178,7 +170,7 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                     <div className="space-y-4">
                         <div>
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Nome / Razão Social</label>
-                            <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Ex: Secretaria de Cultura" className="w-full px-5 py-3 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-bold outline-none focus:ring-2 focus:ring-govblue"/>
+                            <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Ex: Sesc São Paulo" className="w-full px-5 py-3 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-bold outline-none focus:ring-2 focus:ring-govblue"/>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -200,29 +192,52 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                     </h3>
                     <div className="space-y-5">
                         <div className="relative">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Discriminação (O que foi feito?)</label>
-                            <textarea value={serviceDesc} onChange={e => setServiceDesc(e.target.value)} rows={4} placeholder="Ex: Apresentação musical no festival..." className="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-medium outline-none focus:ring-2 focus:ring-govblue pr-12"/>
-                            <button 
-                                onClick={expandDescriptionWithAI}
-                                disabled={isExpandingDescription || serviceDesc.length < 5}
-                                className="absolute right-3 bottom-3 p-2 bg-govblue text-white rounded-xl shadow-lg hover:scale-110 transition-all disabled:opacity-50"
-                                title="Aprimorar descrição com IA"
-                            >
-                                {isExpandingDescription ? '...' : '✨'}
-                            </button>
+                            <div className="flex justify-between items-center mb-2">
+                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Discriminação</label>
+                              <div className="flex gap-2">
+                                <button onClick={applyManualTemplate} className="text-[9px] font-black text-govblue uppercase bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors">Template 📄</button>
+                                <button 
+                                    onClick={expandDescriptionWithAI}
+                                    disabled={isExpandingDescription || serviceDesc.length < 5}
+                                    className="text-[9px] font-black text-white uppercase bg-govblue px-2 py-1 rounded-lg hover:bg-blue-800 disabled:opacity-50 transition-colors"
+                                >
+                                    IA ✨
+                                </button>
+                              </div>
+                            </div>
+                            <textarea value={serviceDesc} onChange={e => setServiceDesc(e.target.value)} rows={5} placeholder="Descreva sua atividade ou use um template..." className="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-medium outline-none focus:ring-2 focus:ring-govblue leading-relaxed"/>
+                            {isExpandingDescription && (
+                                <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center animate-pulse">
+                                    <span className="text-xs font-black text-govblue uppercase tracking-widest">Aprimorando texto...</span>
+                                </div>
+                            )}
                         </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Valor Bruto (R$)</label>
                                 <input type="number" value={serviceValue || ''} onChange={e => setServiceValue(parseFloat(e.target.value) || 0)} className="w-full px-5 py-3 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-black outline-none"/>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Conta p/ Depósito</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Conta de Recebimento</label>
                                 <select value={selectedBankId} onChange={e => setSelectedBankId(e.target.value)} className="w-full px-4 py-3 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-[10px] font-black outline-none">
-                                    <option value="">Selecione a conta...</option>
+                                    <option value="">Selecione...</option>
                                     {accounts.map(a => <option key={a.id} value={a.id}>{a.bank} - {a.name}</option>)}
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="pt-2 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-dashed">
+                           <div>
+                              <p className="text-[10px] font-black text-gray-500 uppercase">Exibir Dados Bancários na Nota?</p>
+                              <p className="text-[9px] text-gray-400 font-medium italic leading-none mt-1">Geralmente inserido na discriminação.</p>
+                           </div>
+                           <button 
+                            onClick={() => setShowBankDetailsOnInvoice(!showBankDetailsOnInvoice)}
+                            className={`w-12 h-6 rounded-full transition-all flex items-center px-1 ${showBankDetailsOnInvoice ? 'bg-govgreen' : 'bg-gray-300'}`}
+                           >
+                              <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${showBankDetailsOnInvoice ? 'translate-x-6' : 'translate-x-0'}`} />
+                           </button>
                         </div>
                     </div>
                 </div>
@@ -235,39 +250,46 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-govblue rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg">NF</div>
                             <div>
-                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Modelo NFSe Nacional</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase">Ambiente de Simulação Legal</p>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Simulação de Emissão</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Conformidade Legal Ativa</p>
                             </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black text-gray-400 uppercase">Nº 00000000</p>
+                          <p className="text-[9px] font-bold text-gray-300">SÉRIE 1</p>
                         </div>
                     </div>
                     
                     <div className="p-10 space-y-8">
                         <div className="grid grid-cols-2 gap-10 border-b pb-8">
                             <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Emitente (Prestador)</p>
-                              <p className="text-sm font-black text-gray-800 dark:text-white uppercase">{businessProfile.companyName}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Prestador de Serviços</p>
+                              <p className="text-xs font-black text-gray-800 dark:text-white uppercase leading-tight">{businessProfile.companyName}</p>
                               <p className="text-[10px] font-mono text-gray-400 mt-1">{businessProfile.cnpj}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Tomador (Cliente)</p>
-                              <p className="text-sm font-black text-gray-800 dark:text-white uppercase">{customerName || 'NOME DO CLIENTE'}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Tomador de Serviços</p>
+                              <p className="text-xs font-black text-gray-800 dark:text-white uppercase leading-tight">{customerName || 'IDENTIFICAÇÃO DO CLIENTE'}</p>
                               <p className="text-[10px] font-mono text-gray-400 mt-1">{customerDoc || '00.000.000/0000-00'}</p>
                             </div>
                         </div>
 
-                        <div className="min-h-[140px] p-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed shadow-inner italic">
-                            {serviceDesc || 'Aguardando preenchimento da descrição do serviço...'}
-                            {selectedBankId && (
-                                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 not-italic">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dados para Pagamento</p>
-                                    <p className="text-[10px] font-bold text-govblue">{accounts.find(a => a.id === selectedBankId)?.bank} - {accounts.find(a => a.id === selectedBankId)?.name}</p>
+                        <div className="p-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed shadow-inner">
+                            <p className="whitespace-pre-wrap">{serviceDesc || 'Aguardando preenchimento da discriminação...'}</p>
+                            
+                            {selectedBankId && showBankDetailsOnInvoice && (
+                                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 underline">Dados para Transferência Bancária</p>
+                                    <p className="text-[10px] font-bold text-govblue uppercase">
+                                      {accounts.find(a => a.id === selectedBankId)?.bank} | {accounts.find(a => a.id === selectedBankId)?.name}
+                                    </p>
                                 </div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-4 gap-1 bg-slate-50 dark:bg-slate-900 p-1 rounded-[2rem]">
                             <div className="bg-white dark:bg-slate-800 p-5 rounded-[1.5rem] text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Valor Bruto</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Bruto</p>
                                 <p className="text-xs font-black dark:text-white">{formatCurrency(serviceValue)}</p>
                             </div>
                             <div className="bg-white dark:bg-slate-800 p-5 rounded-[1.5rem] text-center">
@@ -275,21 +297,21 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                                 <p className="text-xs font-black text-red-500">-{formatCurrency(taxCalculation.total)}</p>
                             </div>
                             <div className="bg-slate-900 p-5 rounded-[1.5rem] text-center col-span-2 shadow-inner">
-                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Líquido Estimado</p>
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Valor Líquido</p>
                                 <p className="text-xs font-black text-govgreen">{formatCurrency(serviceValue - taxCalculation.total)}</p>
                             </div>
                         </div>
 
-                        <div className="pt-6 space-y-3">
+                        <div className="pt-6 grid grid-cols-2 gap-4">
                             <button 
                                 onClick={handleArchiveInvoice}
                                 disabled={!serviceValue || !serviceDesc}
-                                className="w-full py-5 bg-govblue text-white font-black rounded-3xl shadow-xl hover:bg-blue-800 transition-all uppercase text-xs tracking-widest disabled:opacity-50"
+                                className="py-4 bg-govblue text-white font-black rounded-2xl shadow-xl hover:bg-blue-800 transition-all uppercase text-[10px] tracking-widest disabled:opacity-50"
                             >
-                                Finalizar e Arquivar Simulação
+                                Finalizar e Arquivar
                             </button>
-                            <button onClick={() => window.print()} className="w-full py-4 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors">
-                                Imprimir Espelho PDF
+                            <button onClick={() => window.print()} className="py-4 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                                Gerar PDF Espelho
                             </button>
                         </div>
                     </div>
@@ -304,26 +326,28 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                 <div className="px-10 py-8 border-b flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
                     <div>
                         <h3 className="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">Histórico de Faturamento</h3>
-                        <p className="text-xs text-gray-500 font-bold uppercase mt-1 tracking-widest">Total de {invoices.length} notas elaboradas</p>
+                        <p className="text-xs text-gray-500 font-bold uppercase mt-1 tracking-widest">Arquivo de notas elaboradas</p>
                     </div>
-                    <div className="w-12 h-12 bg-white dark:bg-slate-700 rounded-full flex items-center justify-center shadow-sm border">📊</div>
+                    <div className="text-right">
+                       <span className="text-[10px] font-black bg-white dark:bg-slate-700 border px-3 py-1 rounded-full">{invoices.length} NOTAS</span>
+                    </div>
                 </div>
                 
                 {invoices.length === 0 ? (
                     <div className="p-24 text-center text-gray-400">
-                        <p className="text-6xl mb-6 opacity-30">📭</p>
-                        <p className="text-sm font-black uppercase tracking-widest">Nenhuma nota arquivada.</p>
-                        <button onClick={() => setActiveTab('simulator')} className="mt-4 text-xs font-bold text-govblue hover:underline">Começar Faturamento →</button>
+                        <p className="text-6xl mb-6 opacity-30">📂</p>
+                        <p className="text-sm font-black uppercase tracking-widest">Seu arquivo está vazio.</p>
+                        <button onClick={() => setActiveTab('simulator')} className="mt-4 text-xs font-bold text-govblue hover:underline">Simular faturamento agora →</button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="text-[10px] font-black text-gray-400 uppercase bg-white dark:bg-slate-800 border-b">
                                 <tr>
-                                  <th className="px-10 py-5">Data / Emissão</th>
-                                  <th className="px-6 py-5">Tomador (Cliente)</th>
-                                  <th className="px-6 py-5">Descrição Curta</th>
-                                  <th className="px-6 py-5 text-right">Valor Líquido</th>
+                                  <th className="px-10 py-5">Emissão</th>
+                                  <th className="px-6 py-5">Tomador</th>
+                                  <th className="px-6 py-5">Descrição</th>
+                                  <th className="px-6 py-5 text-right">Líquido</th>
                                   <th className="px-10 py-5 text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -332,15 +356,15 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                                     <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-10 py-6 text-xs font-black text-gray-400">{new Date(inv.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-6">
-                                            <p className="text-sm font-black text-gray-800 dark:text-white uppercase">{inv.customerName}</p>
-                                            <p className="text-[10px] text-gray-400 font-mono mt-0.5">{inv.customerDoc}</p>
+                                            <p className="text-sm font-black text-gray-800 dark:text-white uppercase leading-none">{inv.customerName}</p>
+                                            <p className="text-[10px] text-gray-400 font-mono mt-1">{inv.customerDoc}</p>
                                         </td>
                                         <td className="px-6 py-6 text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate">{inv.serviceDescription}</td>
                                         <td className="px-6 py-6 text-right font-black text-govgreen">{formatCurrency(inv.netValue)}</td>
                                         <td className="px-10 py-6 text-center">
                                           <div className="flex justify-center gap-2">
-                                            <button onClick={() => { setServiceDesc(inv.serviceDescription); setServiceValue(inv.amount); setCustomerName(inv.customerName); setCustomerDoc(inv.customerDoc); setActiveTab('simulator'); }} className="p-2.5 bg-blue-50 dark:bg-slate-700 text-govblue rounded-xl hover:bg-govblue hover:text-white transition-all" title="Ver no Simulador">👁️</button>
-                                            <button onClick={() => onDeleteInvoice(inv.id)} className="p-2.5 bg-red-50 dark:bg-slate-700 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all" title="Excluir">🗑️</button>
+                                            <button onClick={() => { setServiceDesc(inv.serviceDescription); setServiceValue(inv.amount); setCustomerName(inv.customerName); setCustomerDoc(inv.customerDoc); setActiveTab('simulator'); }} className="p-2.5 bg-blue-50 dark:bg-slate-700 text-govblue rounded-xl hover:bg-govblue hover:text-white transition-all shadow-sm">👁️</button>
+                                            <button onClick={() => onDeleteInvoice(inv.id)} className="p-2.5 bg-red-50 dark:bg-slate-700 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm">🗑️</button>
                                           </div>
                                         </td>
                                     </tr>
@@ -365,7 +389,6 @@ const TaxManager: React.FC<TaxManagerProps> = ({
                       <span className="absolute left-4 top-4 text-gray-400 font-bold">R$</span>
                       <input type="number" value={tempProfile.lastPayrollTotal || ''} onChange={e => setTempProfile({...tempProfile, lastPayrollTotal: parseFloat(e.target.value) || 0})} className="w-full px-12 py-4 rounded-2xl border bg-gray-50 dark:bg-slate-900 dark:text-white text-sm font-black outline-none focus:ring-2 focus:ring-govblue" placeholder="0,00"/>
                     </div>
-                    <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase tracking-wide">Base para cálculo do Anexo III / V do Simples Nacional.</p>
                 </div>
                 <button onClick={() => { onUpdateProfile(tempProfile); alert("Perfil fiscal atualizado!"); }} className="w-full py-5 bg-govblue text-white font-black rounded-3xl shadow-xl hover:bg-blue-800 transition-all uppercase tracking-widest text-sm">Salvar Alterações</button>
               </div>
