@@ -101,6 +101,10 @@ const App: React.FC = () => {
     setCurrentView('dashboard');
   };
 
+  const handleDeleteTransaction = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
   const handleSaveInvoice = (invoice: SimulatedInvoice) => {
     setInvoices(prev => [invoice, ...prev]);
   };
@@ -112,10 +116,10 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
-      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
+      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
       case 'reports': return <Reports transactions={transactions} />;
-      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} />;
+      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} onDeleteTransaction={handleDeleteTransaction} />;
       case 'tax': return <TaxManager transactions={transactions} businessProfile={businessProfile} accounts={accounts} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} onSaveInvoice={handleSaveInvoice} invoices={invoices} onDeleteInvoice={handleDeleteInvoice} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;

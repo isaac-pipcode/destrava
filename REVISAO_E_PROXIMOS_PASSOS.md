@@ -66,12 +66,13 @@ O Destrava Cultura é um SPA de gestão financeira/fiscal para produtores cultur
 
 ## 5. Próximos passos sugeridos
 
-### Fase 1 — Correções imediatas (1–2 dias)
-- [ ] Rotacionar a chave Gemini e remover `define` de `API_KEY` do `vite.config.ts`.
-- [ ] Corrigir duplicações no `package.json` (`vite`, `@vitejs/plugin-react`).
-- [ ] Adicionar null-checks: `BrandingTool.tsx:64`, `geminiService.ts` (`response.text`), `Accountability.tsx:47`, `TaxManager.tsx:54`.
-- [ ] Implementar `onDeleteTransaction` em `App.tsx`.
-- [ ] Documentar `.env.example`.
+### Fase 1 — Correções imediatas (1–2 dias) ✅ aplicada
+- [ ] Rotacionar a chave Gemini (ação manual do mantenedor — a chave atual deve ser considerada exposta). O `define` foi mantido com aviso explícito até existir backend (Fase 2).
+- [x] Corrigir duplicações no `package.json` (`vite`, `@vitejs/plugin-react`).
+- [x] Adicionar null-check em `BrandingTool.tsx` (resposta da IA sem candidates). Obs.: `geminiService.ts`, `Accountability.tsx` e `TaxManager.tsx` já possuíam guards — achados eram falsos positivos.
+- [x] Implementar `onDeleteTransaction` em `App.tsx` (passado a `ManualManager` PF/PJ e `Accountability`).
+- [x] Documentar `.env.example`.
+- [x] Remover cast `(process as any)` em `vite.config.ts`.
 
 ### Fase 2 — Backend mínimo (1–2 semanas)
 - [ ] Criar proxy serverless (Vercel/Cloudflare Workers) para todas as chamadas Gemini, centralizando os 3 pontos de uso (`geminiService`, `TaxManager`, `BrandingTool`).

@@ -61,7 +61,11 @@ const BrandingTool: React.FC = () => {
         }
       });
 
-      for (const part of response.candidates[0].content.parts) {
+      const parts = response.candidates?.[0]?.content?.parts ?? [];
+      if (parts.length === 0) {
+        throw new Error("A IA não retornou nenhuma imagem.");
+      }
+      for (const part of parts) {
         if (part.inlineData) {
           setGeneratedLogo(`data:image/png;base64,${part.inlineData.data}`);
           break;
