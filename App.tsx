@@ -12,6 +12,7 @@ import Documentation from './components/Documentation';
 import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
+import { useAuth } from './contexts/AuthContext';
 import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
@@ -27,7 +28,7 @@ const DEFAULT_ACCOUNTS: BankAccount[] = [
 ];
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
@@ -95,9 +96,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => {
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await signOut();
     setCurrentView('dashboard');
   };
 
@@ -129,7 +129,18 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isLoggedIn) return <Login onLogin={handleLogin} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <svg className="animate-spin h-8 w-8 text-govblue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </div>
+    );
+  }
+
+  if (!user) return <Login isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">

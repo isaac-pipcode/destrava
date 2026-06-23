@@ -74,10 +74,14 @@ O Destrava Cultura é um SPA de gestão financeira/fiscal para produtores cultur
 - [x] Documentar `.env.example`.
 - [x] Remover cast `(process as any)` em `vite.config.ts`.
 
-### Fase 2 — Backend mínimo (1–2 semanas)
-- [ ] Criar proxy serverless (Vercel/Cloudflare Workers) para todas as chamadas Gemini, centralizando os 3 pontos de uso (`geminiService`, `TaxManager`, `BrandingTool`).
-- [ ] Adicionar rate limiting e sanitização/delimitação de dados de usuário nos prompts.
-- [ ] Autenticação real (OAuth Google + e-mail/senha) com cookies HTTP-only.
+### Fase 2 — Backend, auth e IA segura ✅ fundação aplicada
+Stack escolhida (mobile-first, ver `ARQUITETURA_MOBILE.md`): **Capacitor** (lojas) + **Supabase** (Postgres/Auth/RLS) + **Edge Function** (proxy Gemini). Auth por token (PKCE/refresh), não cookies, por ser app nativo.
+- [x] Proxy de IA centralizando os 3 pontos de uso (`geminiService`, `TaxManager`, `BrandingTool`) na Edge Function `gemini`; chave fora do bundle.
+- [x] Rate limiting por usuário/dia e delimitação anti-injection dos dados nos prompts.
+- [x] Autenticação real e-mail/senha + Google OAuth (Supabase Auth); login falso removido.
+- [x] Isolamento de dados por usuário via RLS (schema `0001_init.sql`).
+- [ ] **Provisionamento (ação do mantenedor):** criar projeto Supabase, rodar migração, deploy da função + secrets, configurar Google OAuth.
+- [ ] Migrar dados do `localStorage` para as tabelas do Supabase (próximo incremento).
 
 ### Fase 3 — Robustez (2–4 semanas)
 - [ ] Migrar persistência de `localStorage` para banco no servidor (manter localStorage só como cache/offline).

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { aiClient } from '../services/aiClient';
 
 interface PromptStyle {
   id: string;
@@ -50,27 +50,8 @@ const BrandingTool: React.FC = () => {
   const generateLogo = async () => {
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-            imageConfig: {
-                aspectRatio: "1:1"
-            }
-        }
-      });
-
-      const parts = response.candidates?.[0]?.content?.parts ?? [];
-      if (parts.length === 0) {
-        throw new Error("A IA não retornou nenhuma imagem.");
-      }
-      for (const part of parts) {
-        if (part.inlineData) {
-          setGeneratedLogo(`data:image/png;base64,${part.inlineData.data}`);
-          break;
-        }
-      }
+      const logoDataUrl = await aiClient.generateLogo(prompt);
+      setGeneratedLogo(logoDataUrl);
     } catch (error) {
       console.error("Erro ao gerar logo:", error);
       alert("Não foi possível gerar a imagem. Verifique sua conexão e chave de API.");

@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, BusinessProfile, Cnae, SimulatedInvoice, BankAccount } from '../types';
 import { maskCpfCnpj } from './ManualManager';
-import { GoogleGenAI } from "@google/genai";
+import { aiClient } from '../services/aiClient';
 
 interface TaxManagerProps {
   transactions: Transaction[];
@@ -86,18 +86,11 @@ const TaxManager: React.FC<TaxManagerProps> = ({
     if (!serviceDesc || serviceDesc.length < 5) return;
     setIsExpandingDescription(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Como um assistente fiscal para artistas brasileiros, transforme esta descrição curta em um texto formal e técnico para Nota Fiscal de Serviço (NFSe), adequado para prestação de contas de editais (LPG/Aldir Blanc). Seja profissional e detalhado. Descrição curta: "${serviceDesc}". Retorne APENAS o texto expandido final.`;
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt
-      });
-      
-      if (response.text) setServiceDesc(response.text.trim());
+      const expanded = await aiClient.expandDescription(serviceDesc);
+      if (expanded) setServiceDesc(expanded);
     } catch (e) {
       console.error("Erro na IA:", e);
-      alert("Não foi possível expandir com IA. Verifique sua chave API.");
+      alert("Não foi possível expandir com IA. Tente novamente em instantes.");
     } finally {
       setIsExpandingDescription(false);
     }
