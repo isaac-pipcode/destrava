@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Transaction } from '../types';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
+import { ChartBar, Funnel, FileText, Printer } from '@phosphor-icons/react';
 
 interface ReportsProps {
   transactions: Transaction[];
 }
 
-const COLORS = ['#4c1d95', '#f43f5e', '#059669', '#3b82f6', '#eab308', '#8b5cf6', '#ec4899', '#6366f1'];
+const COLORS = ['#0E6E6A', '#B14A2C', '#E2864D', '#1F7A5C', '#2E6F9E', '#949A99'];
 
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -133,20 +134,20 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       const saldo = data.Receita - data.Despesa;
       
       return (
-        <div className="bg-white dark:bg-slate-800 p-4 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl min-w-[180px] z-50">
-          <p className="font-bold text-gray-800 dark:text-white mb-2 border-b border-gray-100 dark:border-slate-700 pb-2">{label}</p>
+        <div className="bg-surface p-4 border border-line shadow-brand-md rounded-xl min-w-[180px] z-50">
+          <p className="font-bold text-ink mb-2 border-b border-line pb-2">{label}</p>
           <div className="space-y-1">
              <div className="flex justify-between items-center text-xs">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">Receita:</span>
-                <span className="font-bold text-gray-700 dark:text-gray-200">{formatCurrency(data.Receita)}</span>
+                <span className="text-success font-medium">Receita:</span>
+                <span className="font-bold text-muted font-mono tabular-nums">{formatCurrency(data.Receita)}</span>
              </div>
              <div className="flex justify-between items-center text-xs">
-                <span className="text-red-500 dark:text-red-400 font-medium">Despesa:</span>
-                <span className="font-bold text-gray-700 dark:text-gray-200">{formatCurrency(data.Despesa)}</span>
+                <span className="text-error font-medium">Despesa:</span>
+                <span className="font-bold text-muted font-mono tabular-nums">{formatCurrency(data.Despesa)}</span>
              </div>
-             <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-1 flex justify-between items-center text-xs">
-                <span className="text-gray-500 dark:text-gray-400 font-bold uppercase">Saldo:</span>
-                <span className={`font-bold ${saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-500 dark:text-orange-400'}`}>
+             <div className="border-t border-line mt-2 pt-1 flex justify-between items-center text-xs">
+                <span className="text-muted font-bold uppercase">Saldo:</span>
+                <span className={`font-bold font-mono tabular-nums ${saldo >= 0 ? 'text-primary' : 'text-warning'}`}>
                     {formatCurrency(saldo)}
                 </span>
              </div>
@@ -160,12 +161,12 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
   const CustomPieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-slate-800 p-3 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl z-50">
+        <div className="bg-surface p-3 border border-line shadow-brand-md rounded-xl z-50">
             <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill }}></div>
-                <p className="font-bold text-gray-800 dark:text-white text-xs">{payload[0].name}</p>
+                <p className="font-bold text-ink text-xs">{payload[0].name}</p>
             </div>
-            <p className="font-bold text-gray-700 dark:text-gray-200 text-sm pl-4">
+            <p className="font-bold text-muted text-sm pl-4 font-mono tabular-nums">
                 {formatCurrency(payload[0].value)}
             </p>
         </div>
@@ -177,35 +178,35 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
   if (transactions.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-96 text-center animate-fade-in-up">
-            <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4 text-primary dark:text-purple-400">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <div className="w-20 h-20 bg-secondary-soft rounded-full flex items-center justify-center mb-4 text-secondary">
+                <ChartBar size={40} weight="duotone" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sem dados para relatórios</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">Adicione transações no seu Diário Financeiro para visualizar gráficos.</p>
+            <h2 className="text-xl font-display font-bold text-ink">Sem dados para relatórios</h2>
+            <p className="text-muted mt-2">Adicione transações no seu Diário Financeiro para visualizar gráficos.</p>
         </div>
     )
   }
 
   return (
     <div className="animate-fade-in-up pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-purple-100 dark:border-slate-700 pb-6 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-line pb-6 gap-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white">Relatórios & Análise</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Entenda para onde vai o dinheiro de cada projeto.</p>
+          <h2 className="text-3xl font-display font-bold text-ink">Relatórios & Análise</h2>
+          <p className="text-muted mt-1">Entenda para onde vai o dinheiro de cada projeto.</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-purple-50 dark:border-slate-700 mb-8 flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mr-4">
-           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+      <div className="bg-surface p-6 rounded-2xl shadow-brand-sm border border-line mb-8 flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2 text-sm font-bold text-muted uppercase tracking-wide mr-4">
+           <Funnel size={16} weight="duotone" />
            Filtros
         </div>
 
-        <select 
-          value={selectedEntity} 
+        <select
+          value={selectedEntity}
           onChange={(e) => setSelectedEntity(e.target.value as 'all' | 'PF' | 'PJ')}
-          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
+          className="px-4 py-2 rounded-lg bg-surface-2 border border-line text-sm font-medium focus:ring-primary focus:border-primary text-ink"
         >
           <option value="all">Pessoa Física & Jurídica</option>
           <option value="PF">Apenas Pessoa Física</option>
@@ -216,9 +217,9 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
           value={selectedType} 
           onChange={(e) => setSelectedType(e.target.value as 'all' | 'inflow' | 'outflow')}
           className={`px-4 py-2 rounded-lg border text-sm font-medium focus:ring-primary focus:border-primary ${
-              selectedType === 'inflow' ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300' : 
-              selectedType === 'outflow' ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300' :
-              'bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-800 dark:text-gray-200'
+              selectedType === 'inflow' ? 'bg-success-soft border-success text-success' :
+              selectedType === 'outflow' ? 'bg-error-soft border-error text-error' :
+              'bg-surface-2 border-line text-ink'
           }`}
         >
           <option value="all">Entradas e Saídas</option>

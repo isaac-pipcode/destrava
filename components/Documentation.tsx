@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Globe, Code, Printer } from '@phosphor-icons/react';
 
 const Documentation: React.FC = () => {
   const sections = [
@@ -41,17 +42,17 @@ const Documentation: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in-up pb-12">
-      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+      <div className="bg-surface rounded-3xl shadow-brand-sm border border-line overflow-hidden">
         {/* Banner */}
-        <div className="bg-slate-900 p-10 text-white relative">
+        <div className="bg-ink p-10 text-white relative">
             <div className="absolute top-0 right-0 p-8 opacity-10">
-                <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                <Globe size={128} weight="fill" className="text-white" />
             </div>
-            <h2 className="text-4xl font-black tracking-tighter mb-2">DOSSIÊ TÉCNICO</h2>
-            <p className="text-slate-400 font-medium tracking-wide uppercase">DESTRAVA | Financial OS for Creative Economy</p>
+            <h2 className="text-4xl font-display font-extrabold tracking-tight mb-2">DOSSIÊ TÉCNICO</h2>
+            <p className="text-white/60 font-medium tracking-wide uppercase">DESTRAVA | Financial OS for Creative Economy</p>
             <div className="mt-6 flex gap-3">
-                <span className="bg-govgreen px-3 py-1 rounded-full text-[10px] font-bold uppercase">Spec v1.1</span>
-                <span className="bg-govblue px-3 py-1 rounded-full text-[10px] font-bold uppercase">Cloud-Ready Architecture</span>
+                <span className="bg-success px-3 py-1 rounded-full text-[10px] font-bold uppercase">Spec v1.1</span>
+                <span className="bg-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase">Cloud-Ready Architecture</span>
             </div>
         </div>
 
@@ -59,15 +60,15 @@ const Documentation: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 {sections.map((section, idx) => (
                     <div key={idx} className="space-y-4">
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-2 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-govblue rounded-full"></span>
+                        <h3 className="text-lg font-display font-bold text-ink border-b border-line pb-2 flex items-center gap-2">
+                            <span className="w-2 h-2 bg-primary rounded-full"></span>
                             {section.title}
                         </h3>
                         <div className="space-y-3">
                             {section.items.map((item, i) => (
                                 <div key={i} className="flex flex-col">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</span>
-                                    <span className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-tight mt-0.5">{item.value}</span>
+                                    <span className="text-[10px] font-bold text-subtle uppercase tracking-widest">{item.label}</span>
+                                    <span className="text-sm text-muted font-medium leading-tight mt-0.5">{item.value}</span>
                                 </div>
                             ))}
                         </div>
@@ -76,40 +77,40 @@ const Documentation: React.FC = () => {
             </div>
 
             {/* Code Structure Summary for Developers */}
-            <div className="mt-12 p-8 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-700">
-                <h4 className="font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+            <div className="mt-12 p-8 bg-surface-2 rounded-3xl border border-line">
+                <h4 className="font-display font-bold text-ink mb-6 flex items-center gap-2">
+                    <Code size={20} weight="bold" />
                     Resumo da Base de Código (Para Estimativa de Dev)
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-                        <p className="text-2xl font-black text-govblue">15+</p>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold">Componentes React</p>
+                    <div className="bg-surface p-4 rounded-xl shadow-brand-sm">
+                        <p className="text-2xl font-extrabold text-primary">15+</p>
+                        <p className="text-[10px] text-subtle uppercase font-bold">Componentes React</p>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-                        <p className="text-2xl font-black text-govgreen">100%</p>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold">TypeScript Typing</p>
+                    <div className="bg-surface p-4 rounded-xl shadow-brand-sm">
+                        <p className="text-2xl font-extrabold text-success">100%</p>
+                        <p className="text-[10px] text-subtle uppercase font-bold">TypeScript Typing</p>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm">
-                        <p className="text-2xl font-black text-govorange">Serverless</p>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold">Sem Backend Legado</p>
+                    <div className="bg-surface p-4 rounded-xl shadow-brand-sm">
+                        <p className="text-2xl font-extrabold text-accent">Serverless</p>
+                        <p className="text-[10px] text-subtle uppercase font-bold">Sem Backend Legado</p>
                     </div>
                 </div>
-                
-                <div className="mt-8 text-sm text-slate-600 dark:text-slate-400 space-y-4">
+
+                <div className="mt-8 text-sm text-muted space-y-4">
                     <p>O projeto utiliza uma estrutura modular onde cada funcionalidade (Fiscal, Precificação, Relatórios) é independente, facilitando o desenvolvimento paralelo ou a integração com APIs externas.</p>
                     <p><strong>Ponto de Atenção para Precificação:</strong> O motor de IA (GeminiService) já abstrai a complexidade de sanitização de dados financeiros, reduzindo drasticamente o custo de processamento de back-office.</p>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <button 
+                <div className="mt-8 pt-6 border-t border-line flex justify-between items-center">
+                    <button
                         onClick={() => window.print()}
-                        className="text-xs font-bold text-govblue hover:underline flex items-center gap-2"
+                        className="text-xs font-bold text-primary hover:underline flex items-center gap-2"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <Printer size={16} weight="bold" />
                         Imprimir Dossiê Completo
                     </button>
-                    <span className="text-[10px] text-slate-400 uppercase">Documento Confidencial | DESTRAVA v1.1</span>
+                    <span className="text-[10px] text-subtle uppercase">Documento Confidencial | DESTRAVA v1.1</span>
                 </div>
             </div>
         </div>

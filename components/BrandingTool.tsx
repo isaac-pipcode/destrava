@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { aiClient } from '../services/aiClient';
+import { Buildings, PaintBrush, Bank, Rocket, Sparkle, DownloadSimple } from '@phosphor-icons/react';
 
 interface PromptStyle {
   id: string;
@@ -36,6 +37,13 @@ const PRESET_STYLES: PromptStyle[] = [
   }
 ];
 
+const STYLE_ICONS: Record<string, React.ReactNode> = {
+  modern: <Buildings size={24} weight="bold" />,
+  artistic: <PaintBrush size={24} weight="bold" />,
+  finance: <Bank size={24} weight="bold" />,
+  vibrant: <Rocket size={24} weight="bold" />,
+};
+
 const BrandingTool: React.FC = () => {
   const [prompt, setPrompt] = useState(PRESET_STYLES[0].prompt);
   const [selectedStyle, setSelectedStyle] = useState(PRESET_STYLES[0].id);
@@ -62,10 +70,10 @@ const BrandingTool: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up pb-12">
-      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden p-8">
+      <div className="bg-surface rounded-3xl shadow-brand-sm border border-line overflow-hidden p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">IDENTIDADE VISUAL IA</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-2xl font-display font-extrabold text-ink mb-2">IDENTIDADE VISUAL IA</h2>
+          <p className="text-sm text-muted">
             Use o motor Gemini para explorar novas possibilidades estéticas para a marca Destrava.
           </p>
         </div>
@@ -73,19 +81,19 @@ const BrandingTool: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">1. Escolha um Estilo</label>
+              <label className="block text-xs font-black text-subtle uppercase tracking-widest mb-3">1. Escolha um Estilo</label>
               <div className="grid grid-cols-2 gap-3">
                 {PRESET_STYLES.map((style) => (
                   <button
                     key={style.id}
                     onClick={() => handleStyleSelect(style)}
                     className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                      selectedStyle === style.id 
-                        ? 'border-govblue bg-blue-50 dark:bg-blue-900/20 text-govblue shadow-sm' 
-                        : 'border-gray-100 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                      selectedStyle === style.id
+                        ? 'border-primary bg-primary-soft text-primary shadow-brand-sm'
+                        : 'border-line hover:border-line-strong'
                     }`}
                   >
-                    <span className="text-lg block mb-1">{style.emoji}</span>
+                    <span className="block mb-1">{STYLE_ICONS[style.id]}</span>
                     <span className="text-xs font-bold uppercase tracking-tight">{style.name}</span>
                   </button>
                 ))}
@@ -93,7 +101,7 @@ const BrandingTool: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">2. Refine o Prompt (Opcional)</label>
+              <label className="block text-xs font-black text-subtle uppercase tracking-widest">2. Refine o Prompt (Opcional)</label>
               <textarea
                 value={prompt}
                 onChange={(e) => {
@@ -101,13 +109,13 @@ const BrandingTool: React.FC = () => {
                   setSelectedStyle('custom');
                 }}
                 rows={4}
-                className="w-full p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-sm dark:text-white focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                className="w-full p-4 rounded-xl border border-line bg-surface-2 text-sm text-ink focus:ring-2 focus:ring-primary outline-none transition-shadow"
                 placeholder="Descreva o logo que você imagina..."
               />
               <button
                 onClick={generateLogo}
                 disabled={isGenerating}
-                className="w-full py-4 bg-govblue hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 transform active:scale-95"
+                className="w-full py-4 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-brand-md transition-all flex items-center justify-center gap-3 disabled:opacity-50 transform active:scale-95"
               >
                 {isGenerating ? (
                   <>
