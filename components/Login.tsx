@@ -58,7 +58,7 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-200 relative overflow-hidden">
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-4 transition-colors duration-200 relative overflow-hidden">
 
       {/* Background Decoration */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
@@ -71,7 +71,7 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
         {toggleTheme && (
              <button
                onClick={toggleTheme}
-               className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+               className="p-2 text-muted hover:bg-surface-2 rounded-full transition-colors"
              >
                 {isDarkMode ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -101,32 +101,32 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
             <button
               onClick={handleMagicLink}
               disabled={!!loadingProvider}
-              className="w-full py-3.5 px-4 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-full font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3.5 px-4 bg-surface border border-line-strong rounded-full font-semibold text-ink hover:bg-surface-2 transition-all flex items-center justify-center gap-3 shadow-brand-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
                {loadingProvider === 'magic' ? (
-                 <svg className="animate-spin h-5 w-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                 <svg className="animate-spin h-5 w-5 text-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                  </svg>
                ) : (
-                 <svg className="w-5 h-5 text-govblue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                )}
                <span className="text-sm">Receber link de acesso por e-mail</span>
             </button>
 
             <div className="relative flex py-4 items-center">
-                <div className="flex-grow border-t border-gray-200 dark:border-slate-600"></div>
-                <span className="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold tracking-widest">Ou com senha</span>
-                <div className="flex-grow border-t border-gray-200 dark:border-slate-600"></div>
+                <div className="flex-grow border-t border-line"></div>
+                <span className="flex-shrink-0 mx-4 text-subtle text-[10px] uppercase font-bold tracking-widest">Ou com senha</span>
+                <div className="flex-grow border-t border-line"></div>
             </div>
 
             {error && (
-              <div className="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-xl px-4 py-3">
+              <div className="text-xs font-semibold text-error bg-error-soft border border-error rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
             {info && (
-              <div className="text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 rounded-xl px-4 py-3">
+              <div className="text-xs font-semibold text-success bg-success-soft border border-success rounded-xl px-4 py-3">
                 {info}
               </div>
             )}
@@ -139,7 +139,7 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
                   value={email}
                   autoComplete="email"
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                  className="w-full px-4 py-3 rounded-xl border border-line bg-surface-2 text-ink text-sm focus:ring-2 focus:ring-primary outline-none transition-shadow"
                 />
                 <input
                   type="password"
@@ -147,12 +147,12 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
                   value={password}
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                  className="w-full px-4 py-3 rounded-xl border border-line bg-surface-2 text-ink text-sm focus:ring-2 focus:ring-primary outline-none transition-shadow"
                 />
                 <button
                   type="submit"
                   disabled={!!loadingProvider || !email || !password}
-                  className="w-full py-3.5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="w-full py-3.5 bg-primary hover:bg-primary-hover text-primary-on font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {loadingProvider === 'email'
                     ? 'Processando...'
@@ -160,23 +160,23 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
                 </button>
             </form>
 
-            <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-4">
+            <p className="text-center text-xs text-muted mt-4">
               {mode === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
               <button
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setInfo(null); }}
-                className="font-bold text-govblue dark:text-blue-400 underline"
+                className="font-bold text-primary underline"
               >
                 {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
               </button>
             </p>
 
-            <p className="text-center text-[10px] text-gray-400 mt-6 uppercase tracking-tight">
+            <p className="text-center text-[10px] text-subtle mt-6 uppercase tracking-tight">
                Ao continuar, você concorda com os <a href="#" className="underline">Termos de Uso</a> e <a href="#" className="underline">Privacidade</a>.
             </p>
           </div>
         </div>
-        <div className="bg-gray-50 dark:bg-slate-900/50 p-4 text-center border-t border-gray-100 dark:border-slate-700">
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Tecnologia para a Cultura Brasileira</p>
+        <div className="bg-surface-2 p-4 text-center border-t border-line">
+            <p className="text-[10px] text-subtle uppercase tracking-widest font-bold">Tecnologia para a Cultura Brasileira</p>
         </div>
       </div>
     </div>

@@ -128,53 +128,53 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
-            <div className="absolute top-0 left-0 bottom-0 w-[80%] max-w-[300px] bg-white dark:bg-slate-900 shadow-2xl flex flex-col animate-fade-in-left">
-                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+            <div className="absolute top-0 left-0 bottom-0 w-[80%] max-w-[300px] bg-surface shadow-brand-md flex flex-col animate-fade-in-left">
+                <div className="p-6 border-b border-line flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <Logo size="sm" />
-                        <span className="font-black text-primary dark:text-white tracking-tight">Destrava</span>
+                        <span className="font-display font-extrabold text-ink tracking-tight">Destrava</span>
                     </div>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-400">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button onClick={() => setIsMobileMenuOpen(false)} className="text-subtle">
+                        <X size={24} weight="bold" />
                     </button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     <button onClick={() => handleNav('dashboard')} className={getMobileLinkClass(currentView === 'dashboard')}>
-                        <span>🏠</span> Painel Inicial
-                    </button>
-                    
-                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Finanças</div>
-                    <button onClick={() => handleNav('manual_pj')} className={getMobileLinkClass(currentView === 'manual_pj')}>
-                        <span className="text-blue-400">🏢</span> Diário (PJ)
-                    </button>
-                    <button onClick={() => handleNav('manual_pf')} className={getMobileLinkClass(currentView === 'manual_pf')}>
-                        <span className="text-govgreen">👤</span> Diário (PF)
-                    </button>
-                    
-                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ferramentas</div>
-                    <button onClick={() => handleNav('accountability')} className={getMobileLinkClass(currentView === 'accountability')}>
-                        <span>📑</span> Gestão & Contas
-                    </button>
-                    <button onClick={() => handleNav('tax')} className={getMobileLinkClass(currentView === 'tax')}>
-                        <span>🏛️</span> Fiscal
-                    </button>
-                    <button onClick={() => handleNav('pricing')} className={getMobileLinkClass(currentView === 'pricing')}>
-                        <span>💰</span> Orçamento
-                    </button>
-                    <button onClick={() => handleNav('reports')} className={getMobileLinkClass(currentView === 'reports')}>
-                        <span>📊</span> Relatórios
+                        <House size={20} weight="fill" /> Painel Inicial
                     </button>
 
-                    <div className="py-2 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Informações</div>
+                    <div className="py-2 px-4 text-[10px] font-bold text-subtle uppercase tracking-widest">Finanças</div>
+                    <button onClick={() => handleNav('manual_pj')} className={getMobileLinkClass(currentView === 'manual_pj')}>
+                        <Buildings size={20} weight="fill" className="text-primary" /> Diário (PJ)
+                    </button>
+                    <button onClick={() => handleNav('manual_pf')} className={getMobileLinkClass(currentView === 'manual_pf')}>
+                        <User size={20} weight="fill" className="text-success" /> Diário (PF)
+                    </button>
+
+                    <div className="py-2 px-4 text-[10px] font-bold text-subtle uppercase tracking-widest">Ferramentas</div>
+                    <button onClick={() => handleNav('accountability')} className={getMobileLinkClass(currentView === 'accountability')}>
+                        <Folder size={20} weight="fill" /> Gestão & Contas
+                    </button>
+                    <button onClick={() => handleNav('tax')} className={getMobileLinkClass(currentView === 'tax')}>
+                        <Bank size={20} weight="fill" /> Fiscal
+                    </button>
+                    <button onClick={() => handleNav('pricing')} className={getMobileLinkClass(currentView === 'pricing')}>
+                        <Calculator size={20} weight="fill" /> Orçamento
+                    </button>
+                    <button onClick={() => handleNav('reports')} className={getMobileLinkClass(currentView === 'reports')}>
+                        <ChartBar size={20} weight="fill" /> Relatórios
+                    </button>
+
+                    <div className="py-2 px-4 text-[10px] font-bold text-subtle uppercase tracking-widest">Informações</div>
                     <button onClick={() => handleNav('documentation')} className={getMobileLinkClass(currentView === 'documentation')}>
-                        <span>📖</span> Sobre
+                        <BookOpen size={20} weight="fill" /> Sobre
                     </button>
                 </div>
 
-                <div className="p-4 border-t border-gray-100 dark:border-slate-800">
-                    <button onClick={onLogout} className="w-full py-3 px-4 rounded-xl text-red-500 font-bold flex items-center gap-3">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <div className="p-4 border-t border-line">
+                    <button onClick={onLogout} className="w-full py-3 px-4 rounded-xl text-error font-bold flex items-center gap-3">
+                        <SignOut size={20} weight="bold" />
                         Encerrar Sessão
                     </button>
                 </div>

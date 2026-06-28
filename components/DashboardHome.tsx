@@ -30,11 +30,11 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
   const healthPJ = useMemo(() => calculateHealth('PJ'), [transactions]);
 
   const getStatus = (runway: number, balance: number) => {
-    if (balance === 0 && runway === 0) return { color: 'text-gray-400', label: 'Sem Dados', icon: '⚪' };
-    if (balance < 0) return { color: 'text-red-600', label: 'Negativo', icon: '🚨' };
-    if (runway < 1) return { color: 'text-govorange', label: 'Crítico', icon: '⚠️' };
-    if (runway < 3) return { color: 'text-yellow-600', label: 'Atenção', icon: '🚧' };
-    return { color: 'text-govgreen', label: 'Saudável', icon: '🌱' };
+    if (balance === 0 && runway === 0) return { color: 'text-subtle', label: 'Sem Dados', icon: '⚪' };
+    if (balance < 0) return { color: 'text-error', label: 'Negativo', icon: '🚨' };
+    if (runway < 1) return { color: 'text-warning', label: 'Crítico', icon: '⚠️' };
+    if (runway < 3) return { color: 'text-warning', label: 'Atenção', icon: '🚧' };
+    return { color: 'text-success', label: 'Saudável', icon: '🌱' };
   };
 
   const statusPF = getStatus(healthPF.runway, healthPF.balance);
@@ -91,101 +91,101 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12">
         
         {/* Card PJ - AZUL */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border-l-8 border-govblue relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-surface rounded-2xl shadow-brand-sm p-6 border-l-8 border-primary relative overflow-hidden group hover:shadow-brand-md transition-all">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-govblue dark:text-blue-400 uppercase tracking-widest">Empresa (MEI/ME)</h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Projetos e Editais</p>
+                    <h3 className="text-xs sm:text-sm font-bold text-primary uppercase tracking-widest">Empresa (MEI/ME)</h3>
+                    <p className="text-[10px] sm:text-xs text-muted">Projetos e Editais</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 bg-white dark:bg-slate-700 border-blue-200 dark:border-slate-600 text-govblue dark:text-blue-400`}>
+                <div className={`px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 bg-surface-2 border-line text-primary`}>
                     <span>{statusPJ.icon}</span> <span className="hidden sm:inline">{statusPJ.label}</span>
                 </div>
             </div>
-            
-            <div className="mb-4 bg-blue-50/50 dark:bg-slate-900 p-4 rounded-xl border border-blue-100 dark:border-slate-700 shadow-sm">
-                <p className="text-2xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white truncate">{formatCurrency(healthPJ.balance)}</p>
-                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Saldo atual</p>
+
+            <div className="mb-4 bg-primary-soft p-4 rounded-xl border border-line shadow-brand-sm">
+                <p className="text-2xl sm:text-3xl font-display font-bold text-ink truncate font-mono tabular-nums">{formatCurrency(healthPJ.balance)}</p>
+                <p className="text-[10px] sm:text-sm text-muted">Saldo atual</p>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-blue-100 dark:border-slate-700">
+            <div className="bg-surface-2 rounded-xl p-4 border border-line">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] sm:text-xs font-bold text-gray-600 dark:text-gray-300">Fôlego (Runway)</span>
-                    <span className="text-[10px] sm:text-xs font-bold text-govblue dark:text-blue-400">{healthPJ.runway.toFixed(1)} meses</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-muted">Fôlego (Runway)</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-primary">{healthPJ.runway.toFixed(1)} meses</span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-1">
-                    <div 
-                        className={`h-2 rounded-full transition-all duration-1000 ${healthPJ.runway < 3 ? 'bg-govorange' : 'bg-govblue'}`} 
+                <div className="w-full bg-line rounded-full h-2 mb-1">
+                    <div
+                        className={`h-2 rounded-full transition-all duration-1000 ${healthPJ.runway < 3 ? 'bg-warning' : 'bg-primary'}`}
                         style={{ width: `${Math.min(healthPJ.runway * 10, 100)}%` }}
                     ></div>
                 </div>
             </div>
             <div className="mt-4 text-center">
-                 <button onClick={() => onNavigate('manual_pj')} className="text-xs sm:text-sm font-bold text-govblue dark:text-blue-400 hover:underline">Ver Diário da Empresa &rarr;</button>
+                 <button onClick={() => onNavigate('manual_pj')} className="text-xs sm:text-sm font-bold text-primary hover:underline">Ver Diário da Empresa &rarr;</button>
             </div>
         </div>
 
         {/* Card PF - VERDE */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border-l-8 border-govgreen relative overflow-hidden group hover:shadow-md transition-all">
+        <div className="bg-surface rounded-2xl shadow-brand-sm p-6 border-l-8 border-success relative overflow-hidden group hover:shadow-brand-md transition-all">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-govgreen uppercase tracking-widest">Pessoa Física</h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Survival & Gastos Pessoais</p>
+                    <h3 className="text-xs sm:text-sm font-bold text-success uppercase tracking-widest">Pessoa Física</h3>
+                    <p className="text-[10px] sm:text-xs text-muted">Survival & Gastos Pessoais</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 bg-white dark:bg-slate-700 border-green-200 dark:border-slate-600 text-govgreen`}>
+                <div className={`px-2 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 bg-surface-2 border-line text-success`}>
                     <span>{statusPF.icon}</span> <span className="hidden sm:inline">{statusPF.label}</span>
                 </div>
             </div>
-            
-            <div className="mb-4 bg-green-50/50 dark:bg-slate-900 p-4 rounded-xl border border-green-100 dark:border-slate-700 shadow-sm">
-                <p className="text-2xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white truncate">{formatCurrency(healthPF.balance)}</p>
-                <p className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">Saldo disponível</p>
+
+            <div className="mb-4 bg-success-soft p-4 rounded-xl border border-line shadow-brand-sm">
+                <p className="text-2xl sm:text-3xl font-display font-bold text-ink truncate font-mono tabular-nums">{formatCurrency(healthPF.balance)}</p>
+                <p className="text-[10px] sm:text-sm text-muted">Saldo disponível</p>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-green-100 dark:border-slate-700">
+            <div className="bg-surface-2 rounded-xl p-4 border border-line">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] sm:text-xs font-bold text-gray-600 dark:text-gray-300">Reserva Pessoal</span>
-                    <span className="text-[10px] sm:text-xs font-bold text-govgreen">{healthPF.runway.toFixed(1)} meses</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-muted">Reserva Pessoal</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-success">{healthPF.runway.toFixed(1)} meses</span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-1">
-                    <div 
-                        className={`h-2 rounded-full transition-all duration-1000 ${healthPF.runway < 3 ? 'bg-govorange' : 'bg-govgreen'}`} 
+                <div className="w-full bg-line rounded-full h-2 mb-1">
+                    <div
+                        className={`h-2 rounded-full transition-all duration-1000 ${healthPF.runway < 3 ? 'bg-warning' : 'bg-success'}`}
                         style={{ width: `${Math.min(healthPF.runway * 10, 100)}%` }}
                     ></div>
                 </div>
             </div>
             <div className="mt-4 text-center">
-                 <button onClick={() => onNavigate('manual_pf')} className="text-xs sm:text-sm font-bold text-govgreen hover:underline">Ver Diário Pessoal &rarr;</button>
+                 <button onClick={() => onNavigate('manual_pf')} className="text-xs sm:text-sm font-bold text-success hover:underline">Ver Diário Pessoal &rarr;</button>
             </div>
         </div>
       </div>
       
       {/* Quick Actions Grid - Responsivo (2 ou 4 colunas) */}
-      <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Acesso Rápido</h3>
+      <h3 className="text-xl font-display font-bold text-ink mb-6">Acesso Rápido</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-         <button onClick={() => onNavigate('manual_pj')} className="p-4 sm:p-5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl hover:shadow-md hover:border-govblue dark:hover:border-blue-500 transition-all text-left group">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-govblue group-hover:text-white transition-colors text-govblue dark:text-blue-400">
+         <button onClick={() => onNavigate('manual_pj')} className="p-4 sm:p-5 bg-surface border border-line rounded-2xl hover:shadow-brand-md hover:border-primary transition-all text-left group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-soft rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 dark:text-gray-200 text-xs sm:text-sm">Novo Lançamento</p>
+            <p className="font-bold text-muted text-xs sm:text-sm">Novo Lançamento</p>
          </button>
 
-         <button onClick={() => onNavigate('accountability')} className="p-4 sm:p-5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl hover:shadow-md hover:border-govgreen dark:hover:border-green-500 transition-all text-left group">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-govgreen group-hover:text-white transition-colors text-govgreen dark:text-green-500">
+         <button onClick={() => onNavigate('accountability')} className="p-4 sm:p-5 bg-surface border border-line rounded-2xl hover:shadow-brand-md hover:border-success transition-all text-left group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-success-soft rounded-2xl flex items-center justify-center mb-4 group-hover:bg-success group-hover:text-white transition-colors text-success">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 dark:text-gray-200 text-xs sm:text-sm">Prestar Contas</p>
+            <p className="font-bold text-muted text-xs sm:text-sm">Prestar Contas</p>
          </button>
 
-         <button onClick={() => onNavigate('import')} className="p-4 sm:p-5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl hover:shadow-md hover:border-govorange transition-all text-left group">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-govorange group-hover:text-white transition-colors text-govorange">
+         <button onClick={() => onNavigate('import')} className="p-4 sm:p-5 bg-surface border border-line rounded-2xl hover:shadow-brand-md hover:border-accent transition-all text-left group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent-soft rounded-2xl flex items-center justify-center mb-4 group-hover:bg-accent group-hover:text-white transition-colors text-accent">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-            <p className="font-bold text-gray-700 dark:text-gray-200 text-xs sm:text-sm">Diagnóstico IA</p>
+            <p className="font-bold text-muted text-xs sm:text-sm">Diagnóstico IA</p>
          </button>
-         
-         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-4">
+
+         <div className="bg-surface-2 rounded-2xl border-2 border-dashed border-line-strong flex flex-col items-center justify-center p-4">
              <span className="text-xl mb-1">📅</span>
-             <p className="text-[10px] font-bold text-slate-400 uppercase text-center">{new Date().toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}</p>
+             <p className="text-[10px] font-bold text-subtle uppercase text-center">{new Date().toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}</p>
          </div>
       </div>
     </div>
