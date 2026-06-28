@@ -84,6 +84,13 @@ Stack soberana (mobile-first, ver `ARQUITETURA_MOBILE.md`): **Capacitor** (lojas
 - [ ] **Provisionamento (ação do mantenedor):** Supabase (self-host BR/EU), migração, deploy da função + `MARITACA_API_KEY`, SMTP próprio para magic link.
 - [ ] Migrar dados do `localStorage` para as tabelas do Supabase (próximo incremento).
 
+### Rebrand & UI ✅ aplicado (ver `BRAND.md`)
+- [x] Nova identidade do pacote de design: logo (cadeado + $ + arco âmbar), paleta teal/terracota/âmbar em tokens claro/escuro, tipografia Bricolage + IBM Plex.
+- [x] Tokens em `styles/theme.css` mapeados no Tailwind; classes legadas remapeadas.
+- [x] Redesign de Login, Header, DashboardHome (hero) e KPICards (Phosphor + numerais tabulares).
+- [x] **Tailwind migrado para build local** (sai do `cdn.tailwindcss.com`) — funciona offline no app de loja; importmap aistudiocdn removido; fontes locais via `@fontsource`.
+- [ ] Polir telas restantes (ManualManager, TaxManager, Accountability, Reports, etc.) para a paleta quente completa.
+
 ### Fase 3 — Robustez (2–4 semanas)
 - [ ] Migrar persistência de `localStorage` para banco no servidor (manter localStorage só como cache/offline).
 - [ ] Hook `usePersistedState` com versionamento de esquema enquanto a migração não acontece.

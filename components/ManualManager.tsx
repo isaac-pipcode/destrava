@@ -80,9 +80,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const [editId, setEditId] = useState<string | null>(null);
 
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
-  const themeText = viewContext === 'PF' ? 'text-govgreen' : 'text-[#1d357d]';
-  const themeBorder = viewContext === 'PF' ? 'border-govgreen' : 'border-[#1d357d]';
-  const themeButton = viewContext === 'PF' ? 'bg-govgreen hover:bg-green-700' : 'bg-[#1d357d] hover:bg-blue-900';
+  const themeText = viewContext === 'PF' ? 'text-govgreen' : 'text-primary';
+  const themeBorder = viewContext === 'PF' ? 'border-govgreen' : 'border-primary';
+  const themeButton = viewContext === 'PF' ? 'bg-govgreen hover:bg-green-700' : 'bg-primary hover:bg-primary-hover';
 
   const contextAccounts = useMemo(() => accounts.filter(a => a.entityType === viewContext), [accounts, viewContext]);
 
@@ -367,7 +367,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
 
               {viewContext === 'PJ' && selectedProjectBudgetLines.length > 0 && (
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
-                    <label className="block text-[10px] font-black text-[#1d357d] mb-2 uppercase tracking-widest">Rubrica Orçamentária</label>
+                    <label className="block text-[10px] font-black text-primary mb-2 uppercase tracking-widest">Rubrica Orçamentária</label>
                     <select value={budgetLineId} onChange={(e) => handleBudgetLineSelect(e.target.value)} className="w-full rounded-xl border px-3 py-2 text-xs bg-white dark:bg-slate-900 dark:text-white font-bold"><option value="">-- Vincular Rubrica --</option>{selectedProjectBudgetLines.map(line => <option key={line.id} value={line.id}>{line.expenseItem}</option>)}</select>
                   </div>
               )}

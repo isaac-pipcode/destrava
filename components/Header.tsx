@@ -19,15 +19,15 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
 
   const getLinkClass = (isActive: boolean) => {
     return isActive
-      ? "text-white bg-[#1d357d] px-4 py-2 rounded-lg font-bold text-sm shadow-md"
-      : "text-gray-600 dark:text-gray-300 hover:text-[#1d357d] dark:hover:text-white hover:bg-blue-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-medium text-sm transition-all";
+      ? "text-primary-on bg-primary px-4 py-2 rounded-xl font-semibold text-sm shadow-brand-sm"
+      : "text-muted hover:text-primary hover:bg-primary-soft px-4 py-2 rounded-xl font-medium text-sm transition-all";
   };
 
   const getMobileLinkClass = (isActive: boolean) => {
-    return `w-full text-left px-4 py-3 rounded-xl text-base font-bold flex items-center gap-3 transition-colors ${
-      isActive 
-        ? "bg-[#1d357d] text-white shadow-lg" 
-        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+    return `w-full text-left px-4 py-3 rounded-xl text-base font-semibold flex items-center gap-3 transition-colors ${
+      isActive
+        ? "bg-primary text-primary-on shadow-brand-sm"
+        : "text-ink hover:bg-surface-2"
     }`;
   };
 
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
   };
 
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 sticky top-0 z-50 shadow-sm transition-colors duration-200">
+    <header className="bg-surface border-b border-line sticky top-0 z-50 shadow-brand-sm transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center gap-4 lg:gap-8">
@@ -67,8 +67,8 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
              <div className="flex items-center gap-2 sm:gap-4 cursor-pointer group" onClick={() => onNavigate('dashboard')}>
                 <Logo size="md" />
                 <div className="flex flex-col">
-                    <h1 className="text-xl sm:text-2xl font-black text-[#1d357d] dark:text-white tracking-tighter leading-none transition-colors">Destrava</h1>
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Gestão Inteligente</span>
+                    <h1 className="font-display text-xl sm:text-2xl font-extrabold text-ink tracking-tight leading-none transition-colors">Destrava</h1>
+                    <span className="text-[9px] font-semibold text-subtle uppercase tracking-[0.18em] mt-1">Gestão Inteligente</span>
                 </div>
              </div>
 
@@ -84,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                   {isDropdownOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl shadow-xl py-2 animate-fade-in-up">
                       <button onClick={() => { handleNav('manual_pf'); setIsDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-govgreen font-bold border-l-4 border-transparent hover:border-govgreen">Pessoa Física</button>
-                      <button onClick={() => { handleNav('manual_pj'); setIsDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-[#1d357d] font-bold border-l-4 border-transparent hover:border-[#1d357d]">Pessoa Jurídica</button>
+                      <button onClick={() => { handleNav('manual_pj'); setIsDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary font-bold border-l-4 border-transparent hover:border-primary">Pessoa Jurídica</button>
                     </div>
                   )}
                 </div>
@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
-             <button onClick={onOpenPresentation} className="hidden sm:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-[#1d357d] bg-gray-50 dark:bg-slate-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors border border-gray-100 dark:border-slate-600">
+             <button onClick={onOpenPresentation} className="hidden sm:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-primary bg-gray-50 dark:bg-slate-700 hover:bg-blue-50 px-4 py-2 rounded-full transition-colors border border-gray-100 dark:border-slate-600">
                <span className="text-lg">✨</span> Pitch
              </button>
              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors">
@@ -133,7 +133,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                 <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <Logo size="sm" />
-                        <span className="font-black text-[#1d357d] dark:text-white tracking-tight">Destrava</span>
+                        <span className="font-black text-primary dark:text-white tracking-tight">Destrava</span>
                     </div>
                     <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-400">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>

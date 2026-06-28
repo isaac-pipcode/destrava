@@ -131,8 +131,8 @@ const App: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-        <svg className="animate-spin h-8 w-8 text-govblue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
@@ -143,7 +143,7 @@ const App: React.FC = () => {
   if (!user) return <Login isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-bg text-ink font-sans transition-colors duration-200">
       <Header currentView={currentView} onNavigate={setCurrentView} onLogout={handleLogout} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onOpenPresentation={() => setIsPresentationOpen(true)} />
       <PresentationModal isOpen={isPresentationOpen} onClose={() => setIsPresentationOpen(false)} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

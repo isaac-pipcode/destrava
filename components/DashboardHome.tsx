@@ -45,7 +45,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
   return (
     <div className="animate-fade-in-up">
       {/* Modern Artistic Hero Banner - Responsive Adjustments */}
-      <div className="w-full min-h-[14rem] h-auto rounded-3xl mb-10 relative overflow-hidden bg-gradient-to-r from-govblue via-[#0d6db8] to-govgreen shadow-lg py-10 flex items-center">
+      <div className="w-full min-h-[14rem] h-auto rounded-3xl mb-10 relative overflow-hidden gov-gradient shadow-brand-md py-10 flex items-center">
         {/* Abstract Shapes Decoration */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full transform translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
         <div className="absolute bottom-0 left-20 w-64 h-64 bg-govorange opacity-10 rounded-full transform translate-y-1/2 blur-2xl"></div>
@@ -59,7 +59,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
                     Gestão
                 </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight max-w-2xl">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight max-w-2xl">
                 Por uma gestão saudável <br className="hidden sm:block"/>e sustentável da cultura
             </h2>
             <p className="text-white/80 mt-3 max-w-xl text-xs sm:text-sm font-medium leading-relaxed">
@@ -71,18 +71,18 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
       {/* Seção de Resumo com Feedback Visual para Carregamento de Dados */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 px-2 gap-4">
         <div>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Visão Geral dos Saldos</h3>
+            <h3 className="font-display text-xl font-bold text-ink">Visão Geral dos Saldos</h3>
             {transactions.length === 0 && (
-                <p className="text-xs text-orange-500 font-bold mt-1">⚠️ Seu painel está vazio. Carregue os dados de demonstração abaixo.</p>
+                <p className="text-xs text-warning font-semibold mt-1">Seu painel está vazio. Carregue os dados de demonstração abaixo.</p>
             )}
         </div>
         
         {onLoadDemo && transactions.length < 5 && (
             <button 
                 onClick={onLoadDemo}
-                className="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 py-3 bg-primary text-primary-on rounded-xl text-sm font-semibold shadow-brand-sm hover:bg-primary-hover transition-all transform active:scale-95 flex items-center justify-center gap-2"
             >
-                <span>🚀</span> Carregar Dados de Demonstração
+                Carregar Dados de Demonstração
             </button>
         )}
       </div>

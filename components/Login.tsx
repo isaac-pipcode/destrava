@@ -82,7 +82,7 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
         )}
       </div>
 
-      <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border-t-8 border-govblue z-10 relative">
+      <div className="max-w-md w-full bg-surface rounded-3xl shadow-brand-md overflow-hidden border border-line border-t-8 border-t-primary z-10 relative">
         <div className="p-8">
 
           <div className="flex justify-center mb-8">
@@ -90,8 +90,8 @@ const Login: React.FC<LoginProps> = ({ isDarkMode, toggleTheme }) => {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-black text-[#1d357d] dark:text-white tracking-tighter uppercase">Destrava</h1>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
+            <h1 className="font-display text-4xl font-extrabold text-ink tracking-tight">Destrava</h1>
+            <p className="text-sm font-medium text-muted mt-2">
               {mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'} — gestão inteligente para a cultura
             </p>
           </div>
