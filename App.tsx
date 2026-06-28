@@ -13,6 +13,7 @@ import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
 import { useAuth } from './contexts/AuthContext';
+import { isSupabaseConfigured } from './services/supabaseClient';
 import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
@@ -128,6 +129,25 @@ const App: React.FC = () => {
       default: return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
     }
   };
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-bg text-ink flex items-center justify-center p-6">
+        <div className="max-w-lg w-full bg-surface border border-line rounded-3xl shadow-brand-md p-8">
+          <h1 className="font-display text-2xl font-extrabold text-ink mb-2">Configuração ausente</h1>
+          <p className="text-sm text-muted mb-4">
+            O app não encontrou as variáveis do Supabase no build. Defina-as no
+            ambiente de deploy e publique novamente:
+          </p>
+          <pre className="bg-surface-2 border border-line rounded-xl p-4 text-xs font-mono text-ink overflow-x-auto mb-4">VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-anon-key</pre>
+          <p className="text-xs text-subtle">
+            São variáveis públicas (prefixo VITE_), lidas em tempo de build. Veja ARQUITETURA_MOBILE.md.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (
