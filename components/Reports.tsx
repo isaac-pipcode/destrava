@@ -431,19 +431,19 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                               <th className="px-6 py-3 text-right">Valor</th>
                           </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
+                      <tbody className="divide-y divide-line">
                           {filteredData.map(t => (
-                              <tr key={t.id} className="border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
-                                  <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{new Date(t.date).toLocaleDateString()}</td>
-                                  <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">{t.description}</td>
+                              <tr key={t.id} className="border-b border-line hover:bg-surface-2">
+                                  <td className="px-6 py-3 text-muted">{new Date(t.date).toLocaleDateString()}</td>
+                                  <td className="px-6 py-3 font-medium text-ink">{t.description}</td>
                                   <td className="px-6 py-3">
-                                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${t.entity === 'PF' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}`}>
+                                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${t.entity === 'PF' ? 'bg-success-soft text-success' : 'bg-primary-soft text-primary'}`}>
                                           {t.entity}
                                       </span>
                                   </td>
-                                  <td className="px-6 py-3 text-gray-600 dark:text-gray-400 text-xs">{t.category}</td>
-                                  <td className="px-6 py-3 text-primary dark:text-blue-400">{t.project || '-'}</td>
-                                  <td className={`px-6 py-3 text-right font-bold ${t.type === 'inflow' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                  <td className="px-6 py-3 text-muted text-xs">{t.category}</td>
+                                  <td className="px-6 py-3 text-primary">{t.project || '-'}</td>
+                                  <td className={`px-6 py-3 text-right font-bold font-mono tabular-nums ${t.type === 'inflow' ? 'text-success' : 'text-error'}`}>
                                       {t.type === 'inflow' ? '+' : '-'} {formatCurrency(t.amount)}
                                   </td>
                               </tr>

@@ -186,11 +186,11 @@ const PricingCalculator: React.FC = () => {
                     <p className="text-white/80 max-w-xs text-sm font-bold mb-10 leading-tight">
                         Este é o valor mínimo que você deve cobrar por hora para manter sua carreira sustentável.
                     </p>
-                    
-                    <button 
+
+                    <button
                       onClick={handleUseRateInProject}
                       disabled={calculatedHourlyRate <= 0}
-                      className="group relative px-10 py-5 bg-white text-indigo-600 font-black rounded-3xl transition-all shadow-2xl hover:shadow-white/20 hover:-translate-y-1 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase text-xs tracking-widest"
+                      className="group relative px-10 py-5 bg-surface text-primary font-extrabold rounded-3xl transition-all shadow-brand-md hover:shadow-white/20 hover:-translate-y-1 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase text-xs tracking-widest"
                     >
                         Destravar este valor no Projeto →
                     </button>
@@ -200,9 +200,9 @@ const PricingCalculator: React.FC = () => {
 
         {activeTab === 'project' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-2 sm:px-0">
-                <div className="lg:col-span-7 bg-white dark:bg-slate-800 p-8 rounded-[3rem] shadow-xl border border-gray-100 dark:border-slate-700">
-                    <h3 className="text-xl font-black text-gray-800 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tighter leading-none">
-                        <span className="p-3 bg-emerald-50 dark:bg-slate-700 rounded-2xl">💰</span> Orçamento
+                <div className="lg:col-span-7 bg-surface p-8 rounded-[3rem] shadow-brand-md border border-line">
+                    <h3 className="text-xl font-display font-extrabold text-ink mb-8 flex items-center gap-3 uppercase tracking-tight leading-none">
+                        <span className="p-3 bg-success-soft text-success rounded-2xl flex items-center justify-center"><Money size={20} weight="fill" /></span> Orçamento
                     </h3>
 
                     <div className="space-y-6">
@@ -269,36 +269,36 @@ const PricingCalculator: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-slate-900 p-10 rounded-[3rem] shadow-2xl text-white">
-                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 border-b border-slate-800 pb-4">Budget do Projeto</h4>
-                        
+                    <div className="bg-ink p-10 rounded-[3rem] shadow-brand-md text-white">
+                        <h4 className="text-[10px] font-extrabold text-white/50 uppercase tracking-[0.3em] mb-8 border-b border-white/10 pb-4">Budget do Projeto</h4>
+
                         <div className="space-y-5 font-bold">
                             <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-400">Custo Total Operacional</span>
-                                <span>{formatCurrency(baseCost)}</span>
+                                <span className="text-white/60">Custo Total Operacional</span>
+                                <span className="font-mono tabular-nums">{formatCurrency(baseCost)}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs">
-                                <span className="text-emerald-400">Meta de Lucro ({profitMargin}%)</span>
-                                <span>{formatCurrency(profitValue)}</span>
+                                <span className="text-success">Meta de Lucro ({profitMargin}%)</span>
+                                <span className="font-mono tabular-nums">{formatCurrency(profitValue)}</span>
                             </div>
-                            <div className="flex justify-between items-center text-xs border-b border-slate-800 pb-5">
-                                <span className="text-orange-400">Impostos Provisórios</span>
-                                <span>{formatCurrency(taxValue)}</span>
+                            <div className="flex justify-between items-center text-xs border-b border-white/10 pb-5">
+                                <span className="text-accent">Impostos Provisórios</span>
+                                <span className="font-mono tabular-nums">{formatCurrency(taxValue)}</span>
                             </div>
                             <div className="pt-6 text-center">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Valor Total do Orçamento</p>
-                                <p className="text-5xl font-black text-white tracking-tighter leading-none">
+                                <p className="text-[10px] font-extrabold text-white/50 uppercase tracking-widest mb-2">Valor Total do Orçamento</p>
+                                <p className="text-5xl font-display font-extrabold text-white tracking-tight leading-none font-mono tabular-nums">
                                     {formatCurrency(finalPrice)}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-800">
-                        <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase mb-2 flex items-center gap-2">
-                           <span className="text-lg">💡</span> Dica do Especialista
+                    <div className="bg-primary-soft p-6 rounded-[2rem] border border-line">
+                        <p className="text-[10px] font-extrabold text-primary uppercase mb-2 flex items-center gap-2">
+                           <Lightbulb size={18} weight="fill" className="text-accent" /> Dica do Especialista
                         </p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-snug font-bold">
+                        <p className="text-xs text-primary leading-snug font-bold">
                             Cobrar por hora é o primeiro passo para parar de pagar para trabalhar. O "Gross Up" de impostos garante que sua margem seja real.
                         </p>
                     </div>
