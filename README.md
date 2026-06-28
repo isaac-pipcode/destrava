@@ -2,19 +2,34 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Destrava — Gestão Cultural Inteligente
 
-This contains everything you need to run your app locally.
+App de gestão financeira e fiscal para trabalhadores da cultura, com importação
+de extratos por IA, simulação de impostos (Simples/Fator R), notas fiscais e
+prestação de contas de editais. React + Vite, com backend, auth e IA no Supabase.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1CoFZw8k22fKm2xe-ZCEJ8_ypsgBa8JGN
+## Rodar localmente
 
-## Run Locally
+**Pré-requisitos:** Node.js e um projeto no Supabase.
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
+1. Instale as dependências:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Crie `.env.local` a partir de `.env.example` e preencha `VITE_SUPABASE_URL`
+   e `VITE_SUPABASE_ANON_KEY`.
+3. Configure o backend (migração, Edge Function e Google OAuth) seguindo
+   **[ARQUITETURA_MOBILE.md](./ARQUITETURA_MOBILE.md)**.
+4. Rode o app:
    `npm run dev`
+
+## Arquitetura
+
+Mobile-first (iOS/Android via Capacitor) + web/PWA, com autenticação real
+(e-mail/senha e Google OAuth), dados isolados por usuário via Row-Level Security
+e chamadas de IA atrás de uma Edge Function que guarda a chave do Gemini.
+Detalhes e passos de publicação nas lojas em
+**[ARQUITETURA_MOBILE.md](./ARQUITETURA_MOBILE.md)**.
+
+## Documentos
+- [REVISAO_E_PROXIMOS_PASSOS.md](./REVISAO_E_PROXIMOS_PASSOS.md) — revisão e roadmap
+- [DESIGN_REBRAND_PROMPT.md](./DESIGN_REBRAND_PROMPT.md) — análise de design e rebrand
+- [ARQUITETURA_MOBILE.md](./ARQUITETURA_MOBILE.md) — arquitetura e setup

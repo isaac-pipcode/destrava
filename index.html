@@ -5,44 +5,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
     <title>Destrava - Gestão Cultural Inteligente</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              govblue: '#1351b4', // Azul Gov/Mapa
-              govgreen: '#009a44', // Verde Gov
-              govorange: '#f37021', // Laranja Gov
-              primary: '#1351b4', 
-              secondary: '#1e293b',
-              accent: '#f37021',
-              surface: '#f8fafc',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'], 
-              display: ['Inter', 'sans-serif'],
-            },
-          },
-        },
-      }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-      
+      body { font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+
       /* Custom scrollbar */
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); }
 
-      .dark ::-webkit-scrollbar-thumb { background: #475569; }
-      .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-      
       .gov-gradient {
-        background: linear-gradient(135deg, #1351b4 0%, #009a44 100%);
+        background: linear-gradient(120deg, var(--primary) 0%, var(--primary-hover) 58%, var(--secondary) 140%);
       }
       
       /* Animation Utilities */
@@ -69,21 +42,8 @@
       .hide-scrollbar::-webkit-scrollbar { display: none; }
       .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4"
-  }
-}
-</script>
 </head>
-  <body class="bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 antialiased overflow-x-hidden">
+  <body class="bg-bg text-ink transition-colors duration-200 antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

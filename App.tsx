@@ -12,6 +12,8 @@ import Documentation from './components/Documentation';
 import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
+import { useAuth } from './contexts/AuthContext';
+import { isSupabaseConfigured } from './services/supabaseClient';
 import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice } from './types';
 
 type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
@@ -27,7 +29,7 @@ const DEFAULT_ACCOUNTS: BankAccount[] = [
 ];
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
@@ -95,10 +97,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => {
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await signOut();
     setCurrentView('dashboard');
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
   const handleSaveInvoice = (invoice: SimulatedInvoice) => {
@@ -112,10 +117,10 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
-      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
+      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
       case 'reports': return <Reports transactions={transactions} />;
-      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} />;
+      case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} onDeleteTransaction={handleDeleteTransaction} />;
       case 'tax': return <TaxManager transactions={transactions} businessProfile={businessProfile} accounts={accounts} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} onSaveInvoice={handleSaveInvoice} invoices={invoices} onDeleteInvoice={handleDeleteInvoice} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;
@@ -125,10 +130,40 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isLoggedIn) return <Login onLogin={handleLogin} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-bg text-ink flex items-center justify-center p-6">
+        <div className="max-w-lg w-full bg-surface border border-line rounded-3xl shadow-brand-md p-8">
+          <h1 className="font-display text-2xl font-extrabold text-ink mb-2">Configuração ausente</h1>
+          <p className="text-sm text-muted mb-4">
+            O app não encontrou as variáveis do Supabase no build. Defina-as no
+            ambiente de deploy e publique novamente:
+          </p>
+          <pre className="bg-surface-2 border border-line rounded-xl p-4 text-xs font-mono text-ink overflow-x-auto mb-4">VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-anon-key</pre>
+          <p className="text-xs text-subtle">
+            São variáveis públicas (prefixo VITE_), lidas em tempo de build. Veja ARQUITETURA_MOBILE.md.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </div>
+    );
+  }
+
+  if (!user) return <Login isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-bg text-ink font-sans transition-colors duration-200">
       <Header currentView={currentView} onNavigate={setCurrentView} onLogout={handleLogout} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onOpenPresentation={() => setIsPresentationOpen(true)} />
       <PresentationModal isOpen={isPresentationOpen} onClose={() => setIsPresentationOpen(false)} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

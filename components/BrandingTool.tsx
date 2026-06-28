@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { aiClient } from '../services/aiClient';
+import { Buildings, PaintBrush, Bank, Rocket, Sparkle, DownloadSimple } from '@phosphor-icons/react';
 
 interface PromptStyle {
   id: string;
@@ -36,6 +37,13 @@ const PRESET_STYLES: PromptStyle[] = [
   }
 ];
 
+const STYLE_ICONS: Record<string, React.ReactNode> = {
+  modern: <Buildings size={24} weight="bold" />,
+  artistic: <PaintBrush size={24} weight="bold" />,
+  finance: <Bank size={24} weight="bold" />,
+  vibrant: <Rocket size={24} weight="bold" />,
+};
+
 const BrandingTool: React.FC = () => {
   const [prompt, setPrompt] = useState(PRESET_STYLES[0].prompt);
   const [selectedStyle, setSelectedStyle] = useState(PRESET_STYLES[0].id);
@@ -50,23 +58,8 @@ const BrandingTool: React.FC = () => {
   const generateLogo = async () => {
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-            imageConfig: {
-                aspectRatio: "1:1"
-            }
-        }
-      });
-
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          setGeneratedLogo(`data:image/png;base64,${part.inlineData.data}`);
-          break;
-        }
-      }
+      const logoDataUrl = await aiClient.generateLogo(prompt);
+      setGeneratedLogo(logoDataUrl);
     } catch (error) {
       console.error("Erro ao gerar logo:", error);
       alert("Não foi possível gerar a imagem. Verifique sua conexão e chave de API.");
@@ -77,10 +70,10 @@ const BrandingTool: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up pb-12">
-      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden p-8">
+      <div className="bg-surface rounded-3xl shadow-brand-sm border border-line overflow-hidden p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">IDENTIDADE VISUAL IA</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-2xl font-display font-extrabold text-ink mb-2">IDENTIDADE VISUAL IA</h2>
+          <p className="text-sm text-muted">
             Use o motor Gemini para explorar novas possibilidades estéticas para a marca Destrava.
           </p>
         </div>
@@ -88,19 +81,19 @@ const BrandingTool: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">1. Escolha um Estilo</label>
+              <label className="block text-xs font-black text-subtle uppercase tracking-widest mb-3">1. Escolha um Estilo</label>
               <div className="grid grid-cols-2 gap-3">
                 {PRESET_STYLES.map((style) => (
                   <button
                     key={style.id}
                     onClick={() => handleStyleSelect(style)}
                     className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                      selectedStyle === style.id 
-                        ? 'border-govblue bg-blue-50 dark:bg-blue-900/20 text-govblue shadow-sm' 
-                        : 'border-gray-100 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                      selectedStyle === style.id
+                        ? 'border-primary bg-primary-soft text-primary shadow-brand-sm'
+                        : 'border-line hover:border-line-strong'
                     }`}
                   >
-                    <span className="text-lg block mb-1">{style.emoji}</span>
+                    <span className="block mb-1">{STYLE_ICONS[style.id]}</span>
                     <span className="text-xs font-bold uppercase tracking-tight">{style.name}</span>
                   </button>
                 ))}
@@ -108,7 +101,7 @@ const BrandingTool: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">2. Refine o Prompt (Opcional)</label>
+              <label className="block text-xs font-black text-subtle uppercase tracking-widest">2. Refine o Prompt (Opcional)</label>
               <textarea
                 value={prompt}
                 onChange={(e) => {
@@ -116,13 +109,13 @@ const BrandingTool: React.FC = () => {
                   setSelectedStyle('custom');
                 }}
                 rows={4}
-                className="w-full p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-sm dark:text-white focus:ring-2 focus:ring-govblue outline-none transition-shadow"
+                className="w-full p-4 rounded-xl border border-line bg-surface-2 text-sm text-ink focus:ring-2 focus:ring-primary outline-none transition-shadow"
                 placeholder="Descreva o logo que você imagina..."
               />
               <button
                 onClick={generateLogo}
                 disabled={isGenerating}
-                className="w-full py-4 bg-govblue hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 transform active:scale-95"
+                className="w-full py-4 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-brand-md transition-all flex items-center justify-center gap-3 disabled:opacity-50 transform active:scale-95"
               >
                 {isGenerating ? (
                   <>
@@ -139,16 +132,16 @@ const BrandingTool: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 min-h-[400px] relative overflow-hidden group">
+          <div className="flex flex-col items-center justify-center bg-surface-2 rounded-2xl border-2 border-dashed border-line min-h-[400px] relative overflow-hidden group">
             {generatedLogo ? (
               <img src={generatedLogo} alt="Logo Gerado" className="w-full h-full object-contain p-4 animate-fade-in" />
             ) : (
               <div className="text-center p-8">
-                <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border">
-                    <span className="text-3xl">🎨</span>
+                <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 shadow-brand-sm border border-line text-muted">
+                    <PaintBrush size={28} weight="bold" />
                 </div>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">Pré-visualização da IA</p>
-                <p className="text-[10px] text-gray-500 max-w-[200px] mx-auto">Selecione um estilo e clique em gerar para ver a mágica acontecer.</p>
+                <p className="text-xs text-subtle font-bold uppercase tracking-widest mb-2">Pré-visualização da IA</p>
+                <p className="text-[10px] text-muted max-w-[200px] mx-auto">Selecione um estilo e clique em gerar para ver a mágica acontecer.</p>
               </div>
             )}
             
@@ -160,23 +153,21 @@ const BrandingTool: React.FC = () => {
                     link.download = `destrava-${selectedStyle}-logo.png`;
                     link.click();
                 }}
-                className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-3 rounded-full shadow-xl hover:bg-white dark:hover:bg-slate-700 transition-all transform hover:scale-110"
+                className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm p-3 rounded-full shadow-brand-md hover:bg-surface transition-all transform hover:scale-110"
                 title="Download"
                >
-                 <svg className="w-6 h-6 text-govblue dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                 </svg>
+                 <DownloadSimple size={24} weight="bold" className="text-primary" />
                </button>
             )}
           </div>
         </div>
 
-        <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-4">
-            <span className="text-xl">✨</span>
+        <div className="mt-8 p-6 bg-primary-soft rounded-xl border border-line flex items-start gap-4">
+            <span className="text-primary"><Sparkle size={20} weight="bold" /></span>
             <div>
-                <h4 className="font-bold text-govblue dark:text-blue-300 text-sm mb-1 italic">Dica de Design</h4>
-                <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
-                    As imagens geradas por IA são conceitos visuais para inspiração. Para uso profissional (papelaria, redes sociais, uniformes), recomendamos exportar essas ideias e refinar com um designer profissional para criar versões vetoriais (SVG).
+                <h4 className="font-bold text-primary text-sm mb-1 italic">Dica de Design</h4>
+                <p className="text-xs text-muted leading-relaxed">
+                    A geração de logo por IA está temporariamente pausada enquanto migramos para um modelo de imagem soberano (sem dependência de Big Tech). As imagens geradas por IA servem como conceitos visuais para inspiração; para uso profissional, refine com um designer para criar versões vetoriais (SVG).
                 </p>
             </div>
         </div>
