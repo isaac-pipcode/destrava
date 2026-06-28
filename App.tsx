@@ -131,18 +131,29 @@ const App: React.FC = () => {
   };
 
   if (!isSupabaseConfigured) {
+    const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+    const urlDiag = rawUrl ? `definida → ${rawUrl.slice(0, 24)}…` : '(vazia)';
+    const keyDiag = rawKey ? `definida (${rawKey.length} caracteres)` : '(vazia)';
     return (
       <div className="min-h-screen bg-bg text-ink flex items-center justify-center p-6">
         <div className="max-w-lg w-full bg-surface border border-line rounded-3xl shadow-brand-md p-8">
           <h1 className="font-display text-2xl font-extrabold text-ink mb-2">Configuração ausente</h1>
           <p className="text-sm text-muted mb-4">
-            O app não encontrou as variáveis do Supabase no build. Defina-as no
-            ambiente de deploy e publique novamente:
+            O app não encontrou as variáveis do Supabase neste build. Defina-as no
+            ambiente de deploy e <strong>reconstrua</strong>:
           </p>
           <pre className="bg-surface-2 border border-line rounded-xl p-4 text-xs font-mono text-ink overflow-x-auto mb-4">VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-anon-key</pre>
+          <div className="bg-surface-2 border border-line rounded-xl p-4 text-xs font-mono mb-4">
+            <p className="text-subtle uppercase tracking-widest text-[10px] mb-2">O que este build recebeu</p>
+            <p className="text-ink">VITE_SUPABASE_URL: <span className={rawUrl ? 'text-success' : 'text-error'}>{urlDiag}</span></p>
+            <p className="text-ink">VITE_SUPABASE_ANON_KEY: <span className={rawKey ? 'text-success' : 'text-error'}>{keyDiag}</span></p>
+          </div>
           <p className="text-xs text-subtle">
-            São variáveis públicas (prefixo VITE_), lidas em tempo de build. Veja ARQUITETURA_MOBILE.md.
+            Se ambas estão "(vazia)", as variáveis não chegaram ao build: confira o nome exato
+            (prefixo VITE_), o Environment correto (Production) e <strong>refaça o deploy sem cache</strong>.
+            São variáveis públicas lidas em tempo de build.
           </p>
         </div>
       </div>
