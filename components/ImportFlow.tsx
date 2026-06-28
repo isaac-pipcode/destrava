@@ -165,24 +165,24 @@ const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded }) =>
           {state.isLoading && mode === 'analysis' && (
               <div className="flex flex-col items-center justify-center min-h-[50vh] px-6 text-center">
                   <div className="relative w-20 h-20 mb-6">
-                      <div className="absolute inset-0 rounded-full border-4 border-govblue/20 animate-ping"></div>
-                      <div className="absolute inset-0 rounded-full border-t-4 border-govblue animate-spin"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+                      <div className="absolute inset-0 rounded-full border-t-4 border-primary animate-spin"></div>
                   </div>
-                  <p className="text-xl font-black text-gray-800 dark:text-white animate-pulse uppercase tracking-tighter">Analisando sua Carreira...</p>
-                  <p className="text-sm text-gray-500 mt-2 font-medium">Isso pode levar alguns segundos dependendo do volume de dados.</p>
+                  <p className="text-xl font-display font-extrabold text-ink animate-pulse uppercase tracking-tight">Analisando sua Carreira...</p>
+                  <p className="text-sm text-muted mt-2 font-medium">Isso pode levar alguns segundos dependendo do volume de dados.</p>
               </div>
           )}
 
           {state.data && (
             <div className="animate-fade-in-up px-2 sm:px-0">
-              <div className="flex justify-between items-center mb-8 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border">
+              <div className="flex justify-between items-center mb-8 bg-surface p-6 rounded-3xl shadow-brand-sm border border-line">
                   <div>
-                    <h2 className="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">Resultado do Diagnóstico</h2>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Análise processada por Inteligência Artificial</p>
+                    <h2 className="text-2xl font-display font-extrabold text-ink uppercase tracking-tight">Resultado do Diagnóstico</h2>
+                    <p className="text-xs font-bold text-subtle uppercase tracking-widest mt-1">Análise processada por Inteligência Artificial</p>
                   </div>
-                  <button 
+                  <button
                     onClick={handleReset}
-                    className="px-6 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 rounded-2xl text-xs font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest transition-all"
+                    className="px-6 py-3 bg-surface-2 hover:bg-surface-2 rounded-2xl text-xs font-extrabold text-muted uppercase tracking-widest transition-all"
                   >
                     Nova Análise
                   </button>

@@ -231,7 +231,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedYear} 
           onChange={(e) => setSelectedYear(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
+          className="px-4 py-2 rounded-lg bg-surface-2 border border-line text-sm font-medium focus:ring-primary focus:border-primary text-ink"
         >
           <option value="all">Todos os Anos</option>
           {availableYears.map(year => (
@@ -243,7 +243,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedPeriod} 
           onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary min-w-[140px] text-gray-800 dark:text-gray-200"
+          className="px-4 py-2 rounded-lg bg-surface-2 border border-line text-sm font-medium focus:ring-primary focus:border-primary min-w-[140px] text-ink"
         >
           <option value="all">Todo o Período</option>
           <optgroup label="Semestres">
@@ -266,7 +266,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedCategory} 
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
+          className="px-4 py-2 rounded-lg bg-surface-2 border border-line text-sm font-medium focus:ring-primary focus:border-primary text-ink"
         >
           <option value="all">Todas as Categorias</option>
           {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -275,7 +275,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
         <select 
           value={selectedProject} 
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-sm font-medium focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
+          className="px-4 py-2 rounded-lg bg-surface-2 border border-line text-sm font-medium focus:ring-primary focus:border-primary text-ink"
         >
           <option value="all">Todos os Projetos</option>
           {availableProjects.map(p => <option key={p} value={p}>{p}</option>)}
@@ -284,17 +284,17 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className={`bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800 transition-opacity ${selectedType === 'outflow' ? 'opacity-50' : 'opacity-100'}`}>
-           <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase">Receita Total (Filtro)</p>
-           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalInflow)}</p>
+        <div className={`bg-success-soft p-6 rounded-2xl border border-success transition-opacity ${selectedType === 'outflow' ? 'opacity-50' : 'opacity-100'}`}>
+           <p className="text-xs font-bold text-success uppercase">Receita Total (Filtro)</p>
+           <p className="text-2xl font-bold text-ink mt-1 font-mono tabular-nums">{formatCurrency(totalInflow)}</p>
         </div>
-        <div className={`bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl border border-red-100 dark:border-red-800 transition-opacity ${selectedType === 'inflow' ? 'opacity-50' : 'opacity-100'}`}>
-           <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase">Despesa Total (Filtro)</p>
-           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalOutflow)}</p>
+        <div className={`bg-error-soft p-6 rounded-2xl border border-error transition-opacity ${selectedType === 'inflow' ? 'opacity-50' : 'opacity-100'}`}>
+           <p className="text-xs font-bold text-error uppercase">Despesa Total (Filtro)</p>
+           <p className="text-2xl font-bold text-ink mt-1 font-mono tabular-nums">{formatCurrency(totalOutflow)}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700">
-           <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Resultado Líquido</p>
-           <p className={`text-2xl font-bold mt-1 ${totalInflow - totalOutflow >= 0 ? 'text-primary dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>
+        <div className="bg-surface p-6 rounded-2xl border border-line">
+           <p className="text-xs font-bold text-muted uppercase">Resultado Líquido</p>
+           <p className={`text-2xl font-bold mt-1 font-mono tabular-nums ${totalInflow - totalOutflow >= 0 ? 'text-primary' : 'text-error'}`}>
                {formatCurrency(totalInflow - totalOutflow)}
            </p>
         </div>
@@ -302,53 +302,53 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
 
       {/* Accountability Report Mode (Activated when Project is selected) */}
       {selectedProject !== 'all' && (
-        <div className="mb-12 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-purple-200 dark:border-slate-600 overflow-hidden">
-            <div className="bg-purple-50 dark:bg-purple-900/20 px-8 py-6 border-b border-purple-100 dark:border-purple-900 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mb-12 bg-surface rounded-3xl shadow-brand-sm border border-line overflow-hidden">
+            <div className="bg-secondary-soft px-8 py-6 border-b border-line flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <svg className="w-5 h-5 text-primary dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z"></path></svg>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Prestação de Contas: {selectedProject}</h3>
+                    <FileText size={20} weight="duotone" className="text-secondary" />
+                    <h3 className="text-lg font-display font-bold text-ink">Prestação de Contas: {selectedProject}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Modelo formatado para Editais (Lei Paulo Gustavo / Aldir Blanc)</p>
+                  <p className="text-sm text-muted">Modelo formatado para Editais (Lei Paulo Gustavo / Aldir Blanc)</p>
                 </div>
-                <button 
+                <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 bg-primary dark:bg-purple-700 text-white text-sm font-bold rounded-lg shadow hover:bg-purple-800 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-secondary text-white text-sm font-bold rounded-lg shadow-brand-sm hover:opacity-90 transition-opacity flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                  <Printer size={16} weight="duotone" />
                   Imprimir / PDF
                 </button>
             </div>
             <div className="overflow-x-auto p-4">
                 <table className="min-w-full text-sm text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600">
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Item</th>
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Data Pgto</th>
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Fornecedor / Descrição</th>
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Natureza da Despesa</th>
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200">Tipo Doc.</th>
-                            <th className="px-4 py-3 border border-gray-300 dark:border-slate-600 font-bold text-gray-700 dark:text-gray-200 text-right">Valor (R$)</th>
+                        <tr className="bg-surface-2 border border-line">
+                            <th className="px-4 py-3 border border-line font-bold text-muted">Item</th>
+                            <th className="px-4 py-3 border border-line font-bold text-muted">Data Pgto</th>
+                            <th className="px-4 py-3 border border-line font-bold text-muted">Fornecedor / Descrição</th>
+                            <th className="px-4 py-3 border border-line font-bold text-muted">Natureza da Despesa</th>
+                            <th className="px-4 py-3 border border-line font-bold text-muted">Tipo Doc.</th>
+                            <th className="px-4 py-3 border border-line font-bold text-muted text-right">Valor (R$)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredData.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((t, idx) => (
-                             <tr key={t.id} className="border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700">
-                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 text-center">{idx + 1}</td>
-                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-800 dark:text-gray-200">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-800 dark:text-gray-200 font-medium">{t.description}</td>
-                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300">{t.category}</td>
-                                <td className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-400 italic text-xs">Nota Fiscal/Recibo</td>
-                                <td className={`px-4 py-2 border border-gray-300 dark:border-slate-600 text-right font-bold ${t.type === 'inflow' ? 'text-black dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                             <tr key={t.id} className="border border-line hover:bg-surface-2">
+                                <td className="px-4 py-2 border border-line text-muted text-center">{idx + 1}</td>
+                                <td className="px-4 py-2 border border-line text-ink">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                                <td className="px-4 py-2 border border-line text-ink font-medium">{t.description}</td>
+                                <td className="px-4 py-2 border border-line text-muted">{t.category}</td>
+                                <td className="px-4 py-2 border border-line text-subtle italic text-xs">Nota Fiscal/Recibo</td>
+                                <td className={`px-4 py-2 border border-line text-right font-bold font-mono tabular-nums ${t.type === 'inflow' ? 'text-success' : 'text-error'}`}>
                                     {t.type === 'outflow' ? '-' : ''} {new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(t.amount)}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
-                    <tfoot className="bg-gray-100 dark:bg-slate-700 font-bold">
+                    <tfoot className="bg-surface-2 font-bold">
                         <tr>
-                            <td colSpan={5} className="px-4 py-3 border border-gray-300 dark:border-slate-600 text-right uppercase text-gray-700 dark:text-gray-200">Saldo do Projeto</td>
-                            <td className={`px-4 py-3 border border-gray-300 dark:border-slate-600 text-right ${totalInflow - totalOutflow < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                            <td colSpan={5} className="px-4 py-3 border border-line text-right uppercase text-muted">Saldo do Projeto</td>
+                            <td className={`px-4 py-3 border border-line text-right font-mono tabular-nums ${totalInflow - totalOutflow < 0 ? 'text-error' : 'text-success'}`}>
                                 {formatCurrency(totalInflow - totalOutflow)}
                             </td>
                         </tr>
@@ -361,36 +361,36 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Evolution Chart */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700">
-           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Evolução Financeira</h3>
+        <div className="bg-surface p-6 rounded-3xl shadow-brand-sm border border-line">
+           <h3 className="text-lg font-display font-bold text-ink mb-6">Evolução Financeira</h3>
            <div className="h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
                <AreaChart data={evolutionData}>
                   <defs>
                     <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#1F7A5C" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#1F7A5C" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#B14A2C" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#B14A2C" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700" />
-                  <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(val) => `R$${val/1000}k`} tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#949A99" className="dark:stroke-slate-700" />
+                  <XAxis dataKey="name" tick={{fill: '#949A99', fontSize: 12}} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(val) => `R$${val/1000}k`} tick={{fill: '#949A99', fontSize: 12}} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomEvolutionTooltip />} />
                   <Legend />
-                  <Area type="monotone" dataKey="Receita" stroke="#10b981" fillOpacity={1} fill="url(#colorReceita)" strokeWidth={3} />
-                  <Area type="monotone" dataKey="Despesa" stroke="#ef4444" fillOpacity={1} fill="url(#colorDespesa)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="Receita" stroke="#1F7A5C" fillOpacity={1} fill="url(#colorReceita)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="Despesa" stroke="#B14A2C" fillOpacity={1} fill="url(#colorDespesa)" strokeWidth={3} />
                </AreaChart>
              </ResponsiveContainer>
            </div>
         </div>
 
         {/* Breakdown by Category */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700">
-           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">{pieChartTitle}</h3>
+        <div className="bg-surface p-6 rounded-3xl shadow-brand-sm border border-line">
+           <h3 className="text-lg font-display font-bold text-ink mb-6">{pieChartTitle}</h3>
            <div className="h-80 w-full flex">
              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -408,7 +408,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
                         ))}
                     </Pie>
                     <Tooltip content={<CustomPieTooltip />} />
-                    <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px', color: '#94a3b8'}}/>
+                    <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px', color: '#949A99'}}/>
                 </PieChart>
              </ResponsiveContainer>
            </div>
@@ -417,11 +417,11 @@ const Reports: React.FC<ReportsProps> = ({ transactions }) => {
       
       {/* Detail Table for Filtered Data (General View) */}
       {selectedProject === 'all' && (
-          <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-purple-50 dark:border-slate-700 p-6">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Detalhamento de Lançamentos</h3>
+          <div className="mt-8 bg-surface rounded-3xl shadow-brand-sm border border-line p-6">
+              <h3 className="text-lg font-display font-bold text-ink mb-4">Detalhamento de Lançamentos</h3>
               <div className="overflow-x-auto">
                   <table className="min-w-full text-sm text-left">
-                      <thead className="text-xs text-gray-400 uppercase bg-gray-50 dark:bg-slate-700 border-b border-gray-100 dark:border-slate-600">
+                      <thead className="text-xs text-subtle uppercase bg-surface-2 border-b border-line">
                           <tr>
                               <th className="px-6 py-3">Data</th>
                               <th className="px-6 py-3">Descrição</th>

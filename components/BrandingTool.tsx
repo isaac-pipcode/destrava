@@ -132,16 +132,16 @@ const BrandingTool: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 min-h-[400px] relative overflow-hidden group">
+          <div className="flex flex-col items-center justify-center bg-surface-2 rounded-2xl border-2 border-dashed border-line min-h-[400px] relative overflow-hidden group">
             {generatedLogo ? (
               <img src={generatedLogo} alt="Logo Gerado" className="w-full h-full object-contain p-4 animate-fade-in" />
             ) : (
               <div className="text-center p-8">
-                <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border">
-                    <span className="text-3xl">🎨</span>
+                <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 shadow-brand-sm border border-line text-muted">
+                    <PaintBrush size={28} weight="bold" />
                 </div>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">Pré-visualização da IA</p>
-                <p className="text-[10px] text-gray-500 max-w-[200px] mx-auto">Selecione um estilo e clique em gerar para ver a mágica acontecer.</p>
+                <p className="text-xs text-subtle font-bold uppercase tracking-widest mb-2">Pré-visualização da IA</p>
+                <p className="text-[10px] text-muted max-w-[200px] mx-auto">Selecione um estilo e clique em gerar para ver a mágica acontecer.</p>
               </div>
             )}
             
@@ -153,22 +153,20 @@ const BrandingTool: React.FC = () => {
                     link.download = `destrava-${selectedStyle}-logo.png`;
                     link.click();
                 }}
-                className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-3 rounded-full shadow-xl hover:bg-white dark:hover:bg-slate-700 transition-all transform hover:scale-110"
+                className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm p-3 rounded-full shadow-brand-md hover:bg-surface transition-all transform hover:scale-110"
                 title="Download"
                >
-                 <svg className="w-6 h-6 text-govblue dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                 </svg>
+                 <DownloadSimple size={24} weight="bold" className="text-primary" />
                </button>
             )}
           </div>
         </div>
 
-        <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-4">
-            <span className="text-xl">✨</span>
+        <div className="mt-8 p-6 bg-primary-soft rounded-xl border border-line flex items-start gap-4">
+            <span className="text-primary"><Sparkle size={20} weight="bold" /></span>
             <div>
-                <h4 className="font-bold text-govblue dark:text-blue-300 text-sm mb-1 italic">Dica de Design</h4>
-                <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
+                <h4 className="font-bold text-primary text-sm mb-1 italic">Dica de Design</h4>
+                <p className="text-xs text-muted leading-relaxed">
                     A geração de logo por IA está temporariamente pausada enquanto migramos para um modelo de imagem soberano (sem dependência de Big Tech). As imagens geradas por IA servem como conceitos visuais para inspiração; para uso profissional, refine com um designer para criar versões vetoriais (SVG).
                 </p>
             </div>
