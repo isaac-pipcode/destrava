@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   appName: 'Destrava',
   webDir: 'dist',
   ios: { contentInset: 'always' },
-  // Deep link usado no retorno do OAuth do Google em ambiente nativo.
+  // Deep link usado no retorno do magic link em ambiente nativo.
   // Cadastre 'br.com.destrava.app://auth-callback' nas redirect URLs do Supabase.
 };
 

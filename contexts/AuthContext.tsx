@@ -8,7 +8,7 @@ interface AuthContextValue {
   loading: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUpWithPassword: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -49,13 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { needsConfirmation: !data.session };
   };
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+  const signInWithMagicLink = async (email: string) => {
+    // Login sem senha: o Supabase envia um link mágico por e-mail. Sem
+    // dependência de provedores OAuth de Big Tech.
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
       options: {
         // Na web volta para a origem; em nativo (Capacitor) use o deep link
-        // configurado (ex.: 'br.com.destrava.app://auth-callback') — ver doc.
-        redirectTo: window.location.origin,
+        // configurado (ex.: 'br.com.destrava.app://auth-callback').
+        emailRedirectTo: window.location.origin,
       },
     });
     if (error) throw error;
@@ -71,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signInWithPassword,
     signUpWithPassword,
-    signInWithGoogle,
+    signInWithMagicLink,
     signOut,
   };
 

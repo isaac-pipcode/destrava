@@ -161,7 +161,7 @@ const BrandingTool: React.FC = () => {
             <div>
                 <h4 className="font-bold text-govblue dark:text-blue-300 text-sm mb-1 italic">Dica de Design</h4>
                 <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
-                    As imagens geradas por IA são conceitos visuais para inspiração. Para uso profissional (papelaria, redes sociais, uniformes), recomendamos exportar essas ideias e refinar com um designer profissional para criar versões vetoriais (SVG).
+                    A geração de logo por IA está temporariamente pausada enquanto migramos para um modelo de imagem soberano (sem dependência de Big Tech). As imagens geradas por IA servem como conceitos visuais para inspiração; para uso profissional, refine com um designer para criar versões vetoriais (SVG).
                 </p>
             </div>
         </div>
