@@ -1,19 +1,22 @@
 
 import React, { useState } from 'react';
-import { ChartBar, UploadSimple } from '@phosphor-icons/react';
+import { Bank, ChartBar, UploadSimple } from '@phosphor-icons/react';
 import FileUpload from './FileUpload';
 import KPICards from './KPICards';
 import FinancialCharts from './FinancialCharts';
 import InsightPanel from './InsightPanel';
+import StatementImport from './StatementImport';
 import { parseFinancialData, generateFinancialInsights } from '../services/geminiService';
-import { AppState, Transaction, FinancialMonth } from '../types';
+import { AppState, Transaction, FinancialMonth, BankAccount } from '../types';
 
 interface ImportFlowProps {
   transactions: Transaction[];
   onDataAdded: (newT: Transaction[]) => void;
+  accounts?: BankAccount[];
+  customCategories?: string[];
 }
 
-const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded }) => {
+const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded, accounts = [], customCategories = [] }) => {
   const [state, setState] = useState<AppState>({
     data: null,
     insights: [],
@@ -21,7 +24,7 @@ const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded }) =>
     error: null,
   });
 
-  const [mode, setMode] = useState<'selection' | 'upload' | 'analysis'>('selection');
+  const [mode, setMode] = useState<'selection' | 'upload' | 'statement' | 'analysis'>('selection');
 
   const convertTransactionsToFinancialData = (txs: Transaction[]): FinancialMonth[] => {
       const grouped: Record<string, FinancialMonth> = {};
@@ -120,7 +123,20 @@ const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded }) =>
                   <h2 className="text-3xl font-display font-bold text-ink mb-2 tracking-tight uppercase">Diagnóstico Inteligente</h2>
                   <p className="text-muted mb-10 max-w-lg font-medium">Como você deseja destravar sua análise financeira?</p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+                      <button
+                          onClick={() => setMode('statement')}
+                          className="bg-surface p-8 rounded-[2.5rem] shadow-brand-sm border-2 border-transparent hover:border-primary hover:shadow-brand-md transition-all group text-left"
+                      >
+                          <div className="w-14 h-14 bg-primary-soft rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
+                              <Bank size={32} weight="bold" />
+                          </div>
+                          <h3 className="text-xl font-display font-extrabold text-ink mb-2 uppercase tracking-tight">Importar Extrato</h3>
+                          <p className="text-sm text-muted font-medium">
+                              CSV do seu banco lido na hora, sem IA: os lançamentos entram direto no Diário.
+                          </p>
+                      </button>
+
                       <button
                           onClick={handleAnalyzeCurrentData}
                           className="bg-surface p-8 rounded-[2.5rem] shadow-brand-sm border-2 border-transparent hover:border-primary hover:shadow-brand-md transition-all group text-left"
@@ -147,6 +163,20 @@ const ImportFlow: React.FC<ImportFlowProps> = ({ transactions, onDataAdded }) =>
                           </p>
                       </button>
                   </div>
+              </div>
+          )}
+
+          {mode === 'statement' && (
+              <div>
+                  <button onClick={() => setMode('selection')} className="text-muted hover:text-primary mb-2 ml-4 flex items-center gap-2 font-bold uppercase text-xs tracking-widest">
+                      ← Voltar à Seleção
+                  </button>
+                  <StatementImport
+                      accounts={accounts}
+                      customCategories={customCategories}
+                      onImport={onDataAdded}
+                      onDone={() => setMode('selection')}
+                  />
               </div>
           )}
 

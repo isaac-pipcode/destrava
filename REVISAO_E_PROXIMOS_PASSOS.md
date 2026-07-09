@@ -91,11 +91,20 @@ Stack soberana (mobile-first, ver `ARQUITETURA_MOBILE.md`): **Capacitor** (lojas
 - [x] **Tailwind migrado para build local** (sai do `cdn.tailwindcss.com`) — funciona offline no app de loja; importmap aistudiocdn removido; fontes locais via `@fontsource`.
 - [ ] Polir telas restantes (ManualManager, TaxManager, Accountability, Reports, etc.) para a paleta quente completa.
 
+### Núcleo financeiro preditivo (porte do Ouver) ✅ aplicado (2026-07)
+Módulos puros portados do núcleo financeiro do Ouver Manager Pro e adaptados ao modelo do Destrava:
+- [x] **Motor de projeção de recorrências** (`utils/projection.ts`): regras mensais → lançamentos previstos virtuais, saldo projetado, runway real (mês em que o caixa cruza o zero). Nova view **Planejamento** (Projeção / Orçamento / Recorrentes), checkbox "Repetir todo mês" no Diário, "Lançar vencidos" em lote.
+- [x] **Parser de extratos CSV multi-banco** (`services/bankStatementParser.ts`): importação determinística local (sem custo/risco de IA) como caminho primário no Diagnóstico, com categorizador por palavras-chave (`utils/categories.ts`) e refino opcional por IA.
+- [x] **Padrão "IA opcional, nunca bloqueante"** (`utils/localInsights.ts`): fallback local determinístico para insights e para o conselho da projeção; novas ações `categorize` e `forecastAdvice` na Edge Function `ai`.
+- [x] **Orçamento mensal meta × realizado** (`components/BudgetPanel.tsx`) com "Sugerir metas" pela média dos últimos 3 meses (`utils/budgetSuggestions.ts`).
+- [x] **IDs determinísticos para upsert** (`utils/ids.ts`) — metas e previstos nunca duplicam; preparado para a sincronização com Supabase.
+- [x] **Harness de testes (vitest)**: 44 testes cobrindo projeção, orçamento, parser, tributos e fallbacks (`tests/`).
+
 ### Fase 3 — Robustez (2–4 semanas)
-- [ ] Migrar persistência de `localStorage` para banco no servidor (manter localStorage só como cache/offline).
+- [ ] Migrar persistência de `localStorage` para banco no servidor (manter localStorage só como cache/offline) — incluir novas coleções `app_recurring` e `app_budgets`.
 - [ ] Hook `usePersistedState` com versionamento de esquema enquanto a migração não acontece.
 - [ ] Refatorar estado global (Context/Zustand) para eliminar prop drilling.
-- [ ] Testes unitários da lógica tributária (Fator R, anexos do Simples) e dos cálculos de runway/orçamento — corrigindo os filtros por entidade e por ano.
+- [x] Testes unitários da lógica tributária (Fator R, anexos do Simples) e dos cálculos de runway/orçamento — corrigidos o filtro por ano do Fator R (agora RBT12 em `utils/tax.ts`) e a contagem de meses do runway (ano+mês em `DashboardHome`).
 - [ ] Sair do importmap/CDN: bundlar dependências via npm no build.
 - [ ] CSP e security headers no hosting.
 

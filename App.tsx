@@ -12,11 +12,12 @@ import Documentation from './components/Documentation';
 import BrandingTool from './components/BrandingTool';
 import Login from './components/Login';
 import PresentationModal from './components/PresentationModal';
+import Planning from './components/Planning';
 import { useAuth } from './contexts/AuthContext';
 import { isSupabaseConfigured } from './services/supabaseClient';
-import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice } from './types';
+import { Transaction, ProjectMetadata, BankAccount, BusinessProfile, SimulatedInvoice, RecurringRule, MonthlyBudget } from './types';
 
-type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
+type View = 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'planning' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding';
 
 export const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
@@ -66,6 +67,16 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : { cnpj: '', companyName: '', secondaryCnaes: [] };
   });
 
+  const [recurringRules, setRecurringRules] = useState<RecurringRule[]>(() => {
+    const saved = localStorage.getItem('app_recurring');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [budgets, setBudgets] = useState<MonthlyBudget[]>(() => {
+    const saved = localStorage.getItem('app_budgets');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -84,6 +95,8 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('app_invoices', JSON.stringify(invoices)); }, [invoices]);
   useEffect(() => { localStorage.setItem('app_categories', JSON.stringify(customCategories)); }, [customCategories]);
   useEffect(() => { localStorage.setItem('app_business_profile', JSON.stringify(businessProfile)); }, [businessProfile]);
+  useEffect(() => { localStorage.setItem('app_recurring', JSON.stringify(recurringRules)); }, [recurringRules]);
+  useEffect(() => { localStorage.setItem('app_budgets', JSON.stringify(budgets)); }, [budgets]);
 
   const toggleTheme = () => {
     if (isDarkMode) {
@@ -106,6 +119,24 @@ const App: React.FC = () => {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  /** Confirma lançamentos previstos (virtuais) como transações reais. */
+  const handleConfirmPlanned = (planned: Transaction[]) => {
+    const confirmed: Transaction[] = planned.map(p => ({
+      ...p,
+      id: generateId(),
+      status: 'REALIZED' as const,
+    }));
+    setTransactions(prev => [...prev, ...confirmed]);
+  };
+
+  /** Upsert de metas por id determinístico: mesma categoria/mês sobrescreve. */
+  const handleUpsertBudgets = (newBudgets: MonthlyBudget[]) => {
+    setBudgets(prev => {
+      const ids = new Set(newBudgets.map(b => b.id));
+      return [...prev.filter(b => !ids.has(b.id)), ...newBudgets];
+    });
+  };
+
   const handleSaveInvoice = (invoice: SimulatedInvoice) => {
     setInvoices(prev => [invoice, ...prev]);
   };
@@ -116,17 +147,18 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
-      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} />;
-      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} />;
+      case 'dashboard': return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} recurringRules={recurringRules} />;
+      case 'manual_pf': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PF" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onAddRecurring={(rule) => setRecurringRules(prev => [...prev, rule])} />;
+      case 'manual_pj': return <ManualManager transactions={transactions} setTransactions={setTransactions} onDeleteTransaction={handleDeleteTransaction} viewContext="PJ" customCategories={customCategories} onAddCategory={(cat) => setCustomCategories(prev => [...prev, cat])} projects={projects} accounts={accounts} onAddAccount={(acc) => setAccounts(prev => [...prev, acc])} onGenerateInvoice={(id) => { setActiveInvoiceTransactionId(id); setCurrentView('tax'); }} onAddRecurring={(rule) => setRecurringRules(prev => [...prev, rule])} />;
+      case 'planning': return <Planning transactions={transactions} recurringRules={recurringRules} budgets={budgets} accounts={accounts} customCategories={customCategories} onConfirmPlanned={handleConfirmPlanned} onAddRule={(rule) => setRecurringRules(prev => [...prev, rule])} onDeleteRule={(id) => setRecurringRules(prev => prev.filter(r => r.id !== id))} onUpsertBudgets={handleUpsertBudgets} onDeleteBudget={(id) => setBudgets(prev => prev.filter(b => b.id !== id))} />;
       case 'reports': return <Reports transactions={transactions} />;
       case 'accountability': return <Accountability transactions={transactions} projects={projects} onSaveProject={(p) => setProjects(prev => [...prev.filter(x => x.id !== p.id), p])} onDeleteTransaction={handleDeleteTransaction} />;
       case 'tax': return <TaxManager transactions={transactions} businessProfile={businessProfile} accounts={accounts} onUpdateProfile={setBusinessProfile} initialTransactionId={activeInvoiceTransactionId} onSaveInvoice={handleSaveInvoice} invoices={invoices} onDeleteInvoice={handleDeleteInvoice} />;
       case 'pricing': return <PricingCalculator />;
       case 'documentation': return <Documentation />;
       case 'branding': return <BrandingTool />;
-      case 'import': return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} />;
-      default: return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} />;
+      case 'import': return <ImportFlow transactions={transactions} onDataAdded={(newT) => setTransactions(prev => [...prev, ...newT])} accounts={accounts} customCategories={customCategories} />;
+      default: return <DashboardHome onNavigate={(v) => setCurrentView(v as View)} transactions={transactions} setTransactions={setTransactions} recurringRules={recurringRules} />;
     }
   };
 

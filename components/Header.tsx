@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkle, House, Buildings, User, Folder, Bank, Calculator, ChartBar, BookOpen, SignOut, List, X } from '@phosphor-icons/react';
+import { Sparkle, House, Buildings, User, Folder, Bank, Calculator, ChartBar, BookOpen, SignOut, List, X, TrendUp } from '@phosphor-icons/react';
 import Logo from './Logo';
 
 interface HeaderProps {
   currentView: string;
-  onNavigate: (view: 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding') => void;
+  onNavigate: (view: 'dashboard' | 'import' | 'manual_pf' | 'manual_pj' | 'planning' | 'accountability' | 'reports' | 'tax' | 'pricing' | 'documentation' | 'branding') => void;
   onLogout: () => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
@@ -88,6 +88,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                   )}
                 </div>
 
+                <button onClick={() => onNavigate('planning')} className={getLinkClass(currentView === 'planning')}>Planejamento</button>
                 <button onClick={() => onNavigate('accountability')} className={getLinkClass(currentView === 'accountability')}>Gestão</button>
                 <button onClick={() => onNavigate('tax')} className={getLinkClass(currentView === 'tax')}>Fiscal</button>
                 <button onClick={() => onNavigate('pricing')} className={getLinkClass(currentView === 'pricing')}>Orçamento</button>
@@ -150,6 +151,9 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onLogout, isDa
                     </button>
                     <button onClick={() => handleNav('manual_pf')} className={getMobileLinkClass(currentView === 'manual_pf')}>
                         <User size={20} weight="fill" className="text-success" /> Diário (PF)
+                    </button>
+                    <button onClick={() => handleNav('planning')} className={getMobileLinkClass(currentView === 'planning')}>
+                        <TrendUp size={20} weight="fill" className="text-accent" /> Planejamento
                     </button>
 
                     <div className="py-2 px-4 text-[10px] font-bold text-subtle uppercase tracking-widest">Ferramentas</div>

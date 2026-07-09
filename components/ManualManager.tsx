@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Trash, PencilSimple, X, Receipt, Calendar, CaretLeft, CaretRight } from '@phosphor-icons/react';
-import { Transaction, ProjectMetadata, BudgetLineItem, ProjectStage, ExpenseNature, BankAccount } from '../types';
+import { Plus, Trash, PencilSimple, X, Receipt, Calendar, CaretLeft, CaretRight, ArrowsClockwise } from '@phosphor-icons/react';
+import { Transaction, ProjectMetadata, BudgetLineItem, ProjectStage, ExpenseNature, BankAccount, RecurringRule } from '../types';
 import { generateId } from '../App';
+import { PJ_CATEGORIES_IN, PJ_CATEGORIES_OUT, PF_CATEGORIES_IN, PF_CATEGORIES_OUT } from '../utils/categories';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -13,11 +14,6 @@ const WEEKDAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-
-const PJ_CATEGORIES_IN = ['Cachê Artístico/Serviço', 'Edital/Lei de Incentivo', 'Venda de Obras/Ingressos', 'Aporte de Sócio', 'Outros'];
-const PJ_CATEGORIES_OUT = ['Produção/Material', 'Equipamentos/Software', 'Impostos (MEI/Simples)', 'Contabilidade/Jurídico', 'Aluguel de Espaço/Sede', 'Marketing/Divulgação', 'Pró-labore/Distribuição Lucro', 'Transporte/Logística', 'Taxas Bancárias', 'Outros'];
-const PF_CATEGORIES_IN = ['Pró-labore/Retirada da PJ', 'Cachê (Pessoa Física)', 'Salário/Emprego CLT', 'Rendimentos/Investimentos', 'Presentes/Doações Recebidas', 'Reembolsos', 'Outros'];
-const PF_CATEGORIES_OUT = ['Habitação (Aluguel/Condomínio)', 'Alimentação/Mercado', 'Saúde/Farmácia', 'Transporte/Combustível', 'Educação/Cursos', 'Lazer/Cultura', 'Família/Filhos', 'Assinaturas/Serviços (Net/Luz)', 'Vestuário/Cuidados Pessoais', 'Doações/Apoios', 'Investimentos/Poupança', 'Outros'];
 
 export const maskCpfCnpj = (value: string) => {
     let v = value.replace(/\D/g, "");
@@ -46,11 +42,12 @@ interface ManualManagerProps {
   accounts?: BankAccount[];
   onAddAccount?: (account: BankAccount) => void;
   onGenerateInvoice?: (transactionId: string) => void;
+  onAddRecurring?: (rule: RecurringRule) => void;
 }
 
-const ManualManager: React.FC<ManualManagerProps> = ({ 
-    transactions, setTransactions, onDeleteTransaction, viewContext, customCategories, onAddCategory, 
-    projects = [], accounts = [], onAddAccount, onGenerateInvoice 
+const ManualManager: React.FC<ManualManagerProps> = ({
+    transactions, setTransactions, onDeleteTransaction, viewContext, customCategories, onAddCategory,
+    projects = [], accounts = [], onAddAccount, onGenerateInvoice, onAddRecurring
 }) => {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState<string>(MONTHS[today.getMonth()]);
@@ -77,8 +74,9 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   const [budgetLineId, setBudgetLineId] = useState('');
   const [supplierDoc, setSupplierDoc] = useState('');
   const [paymentDoc, setPaymentDoc] = useState('');
-  const [hasInvoice, setHasInvoice] = useState(false); 
+  const [hasInvoice, setHasInvoice] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [repeatMonthly, setRepeatMonthly] = useState(false);
 
   const themeColor = viewContext === 'PF' ? 'govgreen' : 'govblue';
   const themeText = viewContext === 'PF' ? 'text-success' : 'text-primary';
@@ -154,9 +152,30 @@ const ManualManager: React.FC<ManualManagerProps> = ({
         accountId: selectedAccountId
     };
 
+    // "Repetir todo mês": cria a regra recorrente junto com o lançamento. O
+    // motor de projeção passa a prever os próximos meses e deduz este (via
+    // recurringId), sem duplicar.
+    if (!editId && repeatMonthly && onAddRecurring) {
+      const ruleId = `rec_${generateId()}`;
+      newTx.isRecurring = true;
+      newTx.recurringId = ruleId;
+      onAddRecurring({
+        id: ruleId,
+        description,
+        amount: numAmount,
+        type,
+        category,
+        entity: viewContext,
+        dayOfMonth: formDate.getDate(),
+        startMonth: `${formDate.getFullYear()}-${String(formDate.getMonth() + 1).padStart(2, '0')}`,
+        monthsAhead: 12,
+        accountId: selectedAccountId || undefined,
+      });
+    }
+
     if (editId) setTransactions(prev => prev.map(t => t.id === editId ? newTx : t));
     else setTransactions(prev => [...prev, newTx]);
-    
+
     setSelectedMonth(MONTHS[formDate.getMonth()]);
     setSelectedYear(formDate.getFullYear());
 
@@ -164,7 +183,7 @@ const ManualManager: React.FC<ManualManagerProps> = ({
   };
 
   const resetForm = () => {
-    setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false);
+    setDescription(''); setAmount(''); setSelectedProjectId(''); setCustomProjectName(''); setBudgetLineId(''); setSupplierDoc(''); setPaymentDoc(''); setEditId(null); setHasInvoice(false); setRepeatMonthly(false);
     setFormDate(new Date());
   };
 
@@ -374,6 +393,26 @@ const ManualManager: React.FC<ManualManagerProps> = ({
               )}
 
               <div><label className="block text-[10px] font-black text-subtle mb-1.5 uppercase tracking-widest">Categoria</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-2xl border border-line px-4 py-3 text-sm bg-surface text-ink font-bold">{availableCategories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+
+              {onAddRecurring && (
+                <button
+                  type="button"
+                  onClick={() => setRepeatMonthly(!repeatMonthly)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all ${repeatMonthly ? 'bg-primary-soft border-primary' : 'bg-surface-2 border-transparent'}`}
+                >
+                  <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest ${repeatMonthly ? 'text-primary' : 'text-subtle'}`}>
+                    <ArrowsClockwise size={16} weight="bold" /> Repetir todo mês
+                  </span>
+                  <span className={`w-10 h-5 rounded-full transition-all flex items-center px-0.5 ${repeatMonthly ? 'bg-primary' : 'bg-surface'} border border-line`}>
+                    <span className={`w-4 h-4 bg-white rounded-full shadow transform transition-transform ${repeatMonthly ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </span>
+                </button>
+              )}
+              {repeatMonthly && (
+                <p className="text-[10px] text-subtle font-medium -mt-2 px-1">
+                  Cria uma recorrência de 12 meses no dia {formDate.getDate()}. Os próximos meses aparecem como "previstos" no Planejamento.
+                </p>
+              )}
 
               <div className="pt-2">
                   <button type="submit" className={`w-full py-4 px-4 rounded-2xl shadow-brand-md text-sm font-black text-white uppercase tracking-widest transform transition-transform active:scale-95 flex items-center justify-center gap-2 ${themeButton}`}><Plus size={18} weight="bold" /> Adicionar no Diário</button>

@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, BusinessProfile, Cnae, SimulatedInvoice, BankAccount } from '../types';
 import { maskCpfCnpj } from './ManualManager';
 import { aiClient } from '../services/aiClient';
+import { revenueLast12Months, calculateFactorR, calculateServiceTaxes } from '../utils/tax';
 import { Buildings, User, FileText, Sparkle, PencilSimple, BookOpen, Gear, Eye, Trash, FolderOpen } from '@phosphor-icons/react';
 
 interface TaxManagerProps {
@@ -61,22 +62,19 @@ const TaxManager: React.FC<TaxManagerProps> = ({
     }
   }, [initialTransactionId, transactions]);
 
+  // Lógica pura e testada em utils/tax.ts. A receita considera os últimos 12
+  // meses (RBT12) — o cálculo antigo somava o histórico inteiro e distorcia o
+  // Fator R quando havia dados de mais de um ano.
   const factorR = useMemo(() => {
       if (businessProfile.regime !== 'ME' || !businessProfile.lastPayrollTotal) return 0;
-      const annualRevenue = transactions
-        .filter(t => t.entity === 'PJ' && t.type === 'inflow')
-        .reduce((acc, t) => acc + t.amount, 0) || 1;
-      return ((businessProfile.lastPayrollTotal * 12) / annualRevenue) * 100;
+      const referenceMonth = new Date().toISOString().slice(0, 7);
+      return calculateFactorR(businessProfile.lastPayrollTotal, revenueLast12Months(transactions, referenceMonth));
   }, [businessProfile, transactions]);
 
-  const taxCalculation = useMemo(() => {
-    const isMei = businessProfile.regime === 'MEI';
-    if (isMei) return { rate: 0, federal: 0, iss: 0, total: 0 };
-    const baseRate = factorR >= 28 ? 0.06 : 0.155;
-    const federalTaxes = serviceValue * baseRate;
-    const issValue = withholdIss ? serviceValue * (issRate / 100) : 0;
-    return { rate: baseRate * 100, federal: federalTaxes, iss: issValue, total: federalTaxes + issValue };
-  }, [businessProfile, serviceValue, factorR, withholdIss, issRate]);
+  const taxCalculation = useMemo(
+    () => calculateServiceTaxes(serviceValue, businessProfile.regime === 'MEI' ? 'MEI' : 'ME', factorR, withholdIss, issRate),
+    [businessProfile, serviceValue, factorR, withholdIss, issRate]
+  );
 
   const applyManualTemplate = () => {
     const template = `Prestação de serviços artísticos de [DESCREVER ATIVIDADE], referente ao projeto [NOME DO PROJETO], realizado em [DATA/LOCAL]. Valor total bruto: ${formatCurrency(serviceValue)}.`;

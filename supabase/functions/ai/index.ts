@@ -106,6 +106,32 @@ async function handleAction(action: string, payload: any): Promise<unknown> {
         fence('DADOS', summary);
       return extractJson(await callMaritaca(prompt));
     }
+    case 'categorize': {
+      // Refina categorias de linhas de extrato já parseadas localmente no app.
+      // O parse dos valores é determinístico no cliente; a IA só classifica.
+      const lines = Array.isArray(payload?.lines) ? payload.lines.slice(0, 300) : [];
+      const categories = Array.isArray(payload?.categories) ? payload.categories.slice(0, 60) : [];
+      const prompt =
+        'Classifique cada transação bancária de um trabalhador da cultura brasileira em UMA das ' +
+        'categorias permitidas. Responda APENAS com um array JSON de objetos ' +
+        '{description, category}, na mesma ordem, usando exatamente o texto de "description" recebido. ' +
+        'Se nenhuma categoria couber, use "Outros".\n' +
+        fence('CATEGORIAS', JSON.stringify(categories)) + '\n' +
+        fence('DADOS', JSON.stringify(lines));
+      return extractJson(await callMaritaca(prompt));
+    }
+    case 'forecastAdvice': {
+      // Conselho curto sobre a projeção de caixa (runway). O app tem fallback
+      // local determinístico — esta ação só enriquece a leitura.
+      const s = payload?.summary ?? {};
+      const prompt =
+        'Você é um mentor financeiro de trabalhadores da cultura no Brasil (renda irregular, ' +
+        'editais, cachês). Com base no resumo da projeção de caixa a seguir, dê um conselho ' +
+        'estratégico curto (2 a 3 frases), direto e prático, sobre como agir nos próximos meses. ' +
+        'Responda APENAS com o texto, sem aspas nem listas.\n' +
+        fence('DADOS', JSON.stringify(s));
+      return await callMaritaca(prompt);
+    }
     case 'expandDescription': {
       const prompt =
         'Transforme a descrição curta em um texto formal e técnico para Nota Fiscal de Serviço ' +

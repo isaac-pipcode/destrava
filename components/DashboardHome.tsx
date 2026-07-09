@@ -1,33 +1,45 @@
 
 import React, { useMemo } from 'react';
-import { Transaction } from '../types';
+import { Transaction, RecurringRule } from '../types';
+import { projectRecurring, buildForecast } from '../utils/projection';
 
 interface DashboardHomeProps {
-  onNavigate: (view: 'import' | 'manual' | 'accountability' | 'manual_pf' | 'manual_pj') => void;
+  onNavigate: (view: 'import' | 'manual' | 'accountability' | 'manual_pf' | 'manual_pj' | 'planning') => void;
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  recurringRules?: RecurringRule[];
   onLoadDemo?: () => void;
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions, setTransactions, onLoadDemo }) => {
-  
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions, setTransactions, recurringRules = [], onLoadDemo }) => {
+
   // Calculate Stats separately for PF and PJ
   const calculateHealth = (entity: 'PF' | 'PJ') => {
-    const entityTrans = transactions.filter(t => t.entity === entity);
+    const entityTrans = transactions.filter(t => t.entity === entity && (t.status ?? 'REALIZED') !== 'PLANNED');
     const totalInflow = entityTrans.reduce((acc, t) => t.type === 'inflow' ? acc + t.amount : acc, 0);
     const totalOutflow = entityTrans.reduce((acc, t) => t.type === 'outflow' ? acc + t.amount : acc, 0);
     const balance = totalInflow - totalOutflow;
 
-    const uniqueMonths = new Set(entityTrans.map(t => t.month)).size || 1;
-    // We consider average expenses only from outflows to be conservative
-    const avgMonthlyExpenses = uniqueMonths > 0 && totalOutflow > 0 ? totalOutflow / uniqueMonths : 0;
+    // Com recorrências cadastradas, o fôlego vem da projeção real (mês em que o
+    // saldo projetado cruza o zero), não da média histórica retrospectiva.
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    if (recurringRules.some(r => r.entity === entity)) {
+      const planned = projectRecurring(recurringRules, transactions, { entity, fromMonth: currentMonth, horizonMonths: 12 });
+      const forecast = buildForecast(entityTrans, planned, currentMonth, 12);
+      return { balance, runway: forecast.runwayMonths ?? 12, projected: true };
+    }
+
+    // Sem recorrências: média histórica. Meses contados por ano+mês — contar só
+    // pelo nome do mês colapsava julho/2025 com julho/2026 e inflava o fôlego.
+    const uniqueMonths = new Set(entityTrans.map(t => t.date.slice(0, 7))).size || 1;
+    const avgMonthlyExpenses = totalOutflow > 0 ? totalOutflow / uniqueMonths : 0;
     const runway = avgMonthlyExpenses > 0 ? balance / avgMonthlyExpenses : 0;
 
-    return { balance, runway, avgMonthlyExpenses };
+    return { balance, runway, projected: false };
   };
 
-  const healthPF = useMemo(() => calculateHealth('PF'), [transactions]);
-  const healthPJ = useMemo(() => calculateHealth('PJ'), [transactions]);
+  const healthPF = useMemo(() => calculateHealth('PF'), [transactions, recurringRules]);
+  const healthPJ = useMemo(() => calculateHealth('PJ'), [transactions, recurringRules]);
 
   const getStatus = (runway: number, balance: number) => {
     if (balance === 0 && runway === 0) return { color: 'text-subtle', label: 'Sem Dados', icon: '⚪' };
@@ -109,8 +121,8 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
 
             <div className="bg-surface-2 rounded-xl p-4 border border-line">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] sm:text-xs font-bold text-muted">Fôlego (Runway)</span>
-                    <span className="text-[10px] sm:text-xs font-bold text-primary">{healthPJ.runway.toFixed(1)} meses</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-muted">Fôlego (Runway){healthPJ.projected ? ' · projetado' : ''}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-primary">{healthPJ.projected && healthPJ.runway >= 12 ? '12+' : healthPJ.runway.toFixed(1)} meses</span>
                 </div>
                 <div className="w-full bg-line rounded-full h-2 mb-1">
                     <div
@@ -143,8 +155,8 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
 
             <div className="bg-surface-2 rounded-xl p-4 border border-line">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] sm:text-xs font-bold text-muted">Reserva Pessoal</span>
-                    <span className="text-[10px] sm:text-xs font-bold text-success">{healthPF.runway.toFixed(1)} meses</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-muted">Reserva Pessoal{healthPF.projected ? ' · projetada' : ''}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-success">{healthPF.projected && healthPF.runway >= 12 ? '12+' : healthPF.runway.toFixed(1)} meses</span>
                 </div>
                 <div className="w-full bg-line rounded-full h-2 mb-1">
                     <div
@@ -183,10 +195,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate, transactions,
             <p className="font-bold text-muted text-xs sm:text-sm">Diagnóstico IA</p>
          </button>
 
-         <div className="bg-surface-2 rounded-2xl border-2 border-dashed border-line-strong flex flex-col items-center justify-center p-4">
-             <span className="text-xl mb-1">📅</span>
-             <p className="text-[10px] font-bold text-subtle uppercase text-center">{new Date().toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}</p>
-         </div>
+         <button onClick={() => onNavigate('planning')} className="p-4 sm:p-5 bg-surface border border-line rounded-2xl hover:shadow-brand-md hover:border-warning transition-all text-left group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-warning-soft rounded-2xl flex items-center justify-center mb-4 group-hover:bg-warning group-hover:text-white transition-colors text-warning">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            </div>
+            <p className="font-bold text-muted text-xs sm:text-sm">Projetar Futuro</p>
+         </button>
       </div>
     </div>
   );

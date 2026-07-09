@@ -4,9 +4,11 @@
 
 # Destrava — Gestão Cultural Inteligente
 
-App de gestão financeira e fiscal para trabalhadores da cultura, com importação
-de extratos por IA, simulação de impostos (Simples/Fator R), notas fiscais e
-prestação de contas de editais. React + Vite, com backend, auth e IA no Supabase.
+App de gestão financeira e fiscal para trabalhadores da cultura: fluxo de caixa
+preditivo (recorrências, projeção de fôlego/runway e orçamento por metas),
+importação de extratos CSV com leitura local + refino por IA, simulação de
+impostos (Simples/Fator R), notas fiscais e prestação de contas de editais.
+React + Vite, com backend, auth e IA no Supabase.
 
 ## Rodar localmente
 
@@ -20,6 +22,8 @@ prestação de contas de editais. React + Vite, com backend, auth e IA no Supaba
    **[ARQUITETURA_MOBILE.md](./ARQUITETURA_MOBILE.md)**.
 4. Rode o app:
    `npm run dev`
+5. Testes e typecheck:
+   `npm test` · `npm run typecheck`
 
 ## Arquitetura
 

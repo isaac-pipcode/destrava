@@ -86,19 +86,48 @@ export interface Transaction {
   amount: number;
   type: 'inflow' | 'outflow';
   category: string;
-  project?: string; 
+  project?: string;
   projectId?: string;
-  date: string; 
-  month: string; 
-  entity: 'PF' | 'PJ'; 
-  supplierDoc?: string; 
-  paymentDoc?: string; 
-  isRecurring?: boolean; 
-  relatedId?: string; 
-  budgetLineId?: string; 
+  date: string;
+  month: string;
+  entity: 'PF' | 'PJ';
+  supplierDoc?: string;
+  paymentDoc?: string;
+  isRecurring?: boolean;
+  relatedId?: string;
+  budgetLineId?: string;
   projectStage?: ProjectStage;
   projectNature?: ExpenseNature;
   accountId?: string;
+  status?: 'REALIZED' | 'PLANNED'; // ausência = REALIZED (retrocompatível)
+  recurringId?: string;            // regra recorrente que originou o lançamento
+}
+
+/**
+ * Regra de lançamento recorrente (ex.: aluguel, assinatura, pró-labore).
+ * O motor de projeção expande a regra em lançamentos PLANNED virtuais —
+ * nunca persistidos — para visualização e cálculo do saldo projetado.
+ */
+export interface RecurringRule {
+  id: string;
+  description: string;
+  amount: number;
+  type: 'inflow' | 'outflow';
+  category: string;
+  entity: 'PF' | 'PJ';
+  dayOfMonth: number;      // 1–31, ajustado ao fim do mês quando necessário
+  startMonth?: string;     // 'YYYY-MM' — início da vigência (padrão: mês atual)
+  monthsAhead?: number;    // horizonte da regra em meses (padrão 12)
+  accountId?: string;
+}
+
+/** Meta de orçamento mensal por categoria (previsto × realizado). */
+export interface MonthlyBudget {
+  id: string;              // determinístico: bud_{pf|pj}_{YYYY-MM}_{categoria}
+  month: string;           // 'YYYY-MM'
+  category: string;
+  plannedAmount: number;
+  entity: 'PF' | 'PJ';
 }
 
 export interface ProjectMetadata {
